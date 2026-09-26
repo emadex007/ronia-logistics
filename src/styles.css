@@ -1,0 +1,63 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Sora', 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #eef4fb;
+  --color-brand-100: #d6e3f3;
+  --color-brand-200: #adc7e6;
+  --color-brand-500: #2b5a91;
+  --color-brand-700: #133a66;
+  --color-brand-800: #0f2f54;
+  --color-brand-900: #0b2545;
+  --color-brand-950: #061629;
+
+  --color-accent-400: #fb923c;
+  --color-accent-500: #f97316;
+  --color-accent-600: #ea580c;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+}
+body {
+  @apply bg-slate-50 text-slate-900;
+}
+
+@utility input {
+  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-xs outline-none transition
+    placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100;
+}
+@utility label {
+  @apply mb-1 block text-xs font-semibold tracking-wide text-slate-600 uppercase;
+}
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition
+    disabled:cursor-not-allowed disabled:opacity-60;
+}
+@utility btn-primary {
+  @apply btn bg-brand-900 text-white hover:bg-brand-800;
+}
+@utility btn-accent {
+  @apply btn bg-accent-500 text-white hover:bg-accent-600;
+}
+@utility btn-ghost {
+  @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-100;
+}
+@utility card {
+  @apply rounded-2xl border border-slate-200 bg-white shadow-xs;
+}
+
+/* Printing: hide everything marked no-print, remove backgrounds */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+  }
+  @page {
+    margin: 12mm;
+  }
+}

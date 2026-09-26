@@ -1,0 +1,11 @@
+node_modules
+dist
+.wrangler
+.dev.vars
+.env
+.tanstack
+.output
+.vinxi
+*.log
+.DS_Store
+worker-configuration.d.ts

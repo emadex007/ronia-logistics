@@ -1,0 +1,27 @@
+name = "ronia-logistics"
+main = "./src/server.ts"
+compatibility_date = "2025-09-02"
+compatibility_flags = ["nodejs_compat"]
+
+# --- D1 database (shipments, tracking, staff, merchants, stock, income/expenses, settings) ---
+# Create with:  npx wrangler d1 create ronia_logistics_db
+# then paste the returned database_id below.
+[[d1_databases]]
+binding = "DB"
+database_name = "ronia_logistics_db"
+database_id = "PASTE_YOUR_DATABASE_ID_HERE"
+migrations_dir = "migrations"
+
+# --- R2 bucket (logo, banners, product photos, proof-of-delivery photos, transfer receipts) ---
+# Create with:  npx wrangler r2 bucket create ronia-logistics-media
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "ronia-logistics-media"
+
+# --- Secrets: set with `npx wrangler secret put <NAME>`, never commit them ---
+# PAYSTACK_SECRET_KEY   sk_test_... or sk_live_...        (Phase 3)
+# RESEND_API_KEY        shipment emails                   (Phase 4)
+# TERMII_API_KEY        SMS / WhatsApp tracking alerts    (Phase 4)
+
+[vars]
+SITE_ENV = "production"
