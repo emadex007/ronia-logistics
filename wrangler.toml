@@ -9,7 +9,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "ronia_logistics_db"
-database_id = "PASTE_YOUR_DATABASE_ID_HERE"
+database_id = "e017890c-6811-4189-994a-1f31deca11e6"
 migrations_dir = "migrations"
 
 # --- R2 bucket (logo, banners, product photos, proof-of-delivery photos, transfer receipts) ---
