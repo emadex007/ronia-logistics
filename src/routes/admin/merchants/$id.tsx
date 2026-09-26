@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Link, createFileRoute, notFound, useRouter } from '@tanstack/react-router'
-import { createMerchantLogin, getMerchant, recordStockMovement, saveMerchant, saveProduct, setMerchantLogin } from '~/fns/merchants'
+import { createMerchantLogin, getMerchant, recordPayout, recordStockMovement, saveMerchant, saveProduct, setMerchantLogin } from '~/fns/merchants'
 import { Alert, Field, PageHeader, StatCard, StatusBadge } from '~/components/ui'
 import { MerchantFields, MovementsTable } from '~/components/MerchantBits'
-import { MOVEMENT_TYPES, dateTime, fromKobo, money, toKobo } from '~/lib/format'
+import { MOVEMENT_TYPES, PAY_METHODS, dateOnly, dateTime, fromKobo, methodLabel, money, toKobo } from '~/lib/format'
 import type { MovementType, Product } from '~/lib/types'
 
 export const Route = createFileRoute('/admin/merchants/$id')({
@@ -19,7 +19,7 @@ export const Route = createFileRoute('/admin/merchants/$id')({
 type Msg = { tone: 'error' | 'success'; text: string } | null
 
 function MerchantDetail() {
-  const { merchant: m, products, movements, month, logins, shipments } = Route.useLoaderData()
+  const { merchant: m, products, movements, month, logins, shipments, payouts, balance } = Route.useLoaderData()
   const { user } = Route.useRouteContext()
   const router = useRouter()
   const canManage = user.role === 'admin' || user.role === 'manager'
@@ -330,6 +330,76 @@ function MerchantDetail() {
               {busy ? 'Saving…' : 'Save'}
             </button>
           </form>
+
+          {/* Money owed to the merchant */}
+          <div className="card space-y-3 p-5 text-sm">
+            <h2 className="font-display font-bold text-brand-900">Merchant's money</h2>
+            <div className="space-y-1">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Total sales recorded</span>
+                <span>{money(balance.sales)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Already paid to merchant</span>
+                <span>{money(balance.paid)}</span>
+              </div>
+              <div className="flex justify-between border-t border-slate-100 pt-2 text-base font-bold">
+                <span>Balance owed</span>
+                <span className={balance.owed > 0 ? 'text-accent-600' : 'text-emerald-700'}>{money(balance.owed)}</span>
+              </div>
+            </div>
+            {canManage && balance.owed > 0 && (
+              <form
+                className="space-y-2 border-t border-slate-100 pt-3"
+                onSubmit={async (e) => {
+                  e.preventDefault()
+                  const form = e.currentTarget
+                  const f = Object.fromEntries(new FormData(form)) as Record<string, string>
+                  if (!confirm(`Record a payout of ₦${Number(f.amount).toLocaleString()} to ${m.business_name}?`)) return
+                  setBusy(true)
+                  const ok = await done(
+                    await recordPayout({
+                      data: { merchant_id: m.id, amount: toKobo(f.amount), method: f.method, reference: f.reference, note: f.note, paid_on: f.paid_on },
+                    }),
+                    'Payout recorded. The merchant can see it in their portal.',
+                  )
+                  if (ok) form.reset()
+                }}
+              >
+                <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Record a payout</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <input name="amount" type="number" min={0.01} step="0.01" required placeholder="Amount ₦" defaultValue={fromKobo(balance.owed)} className="input" />
+                  <select name="method" defaultValue="transfer" className="input">
+                    {PAY_METHODS.filter((x) => x.value !== 'paystack').map((x) => (
+                      <option key={x.value} value={x.value}>
+                        {x.label}
+                      </option>
+                    ))}
+                  </select>
+                  <input name="reference" placeholder="Transfer ref." className="input" />
+                  <input name="paid_on" type="date" className="input" aria-label="Paid on" />
+                </div>
+                <input name="note" placeholder="Note" className="input" />
+                <button className="btn-accent w-full" disabled={busy}>
+                  Record payout
+                </button>
+              </form>
+            )}
+            {payouts.length > 0 && (
+              <ul className="divide-y divide-slate-100 border-t border-slate-100 pt-1 text-xs">
+                {payouts.slice(0, 8).map((p) => (
+                  <li key={p.id} className="flex justify-between gap-2 py-1.5">
+                    <span>
+                      {dateOnly(p.paid_at)} · {methodLabel(p.method)}
+                      {p.reference ? ` · ${p.reference}` : ''}
+                      <span className="block text-slate-400">by {p.handled_by_name ?? '—'}</span>
+                    </span>
+                    <span className="font-semibold">{money(p.amount)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
           {/* Portal login */}
           <div className="card space-y-3 p-5 text-sm">

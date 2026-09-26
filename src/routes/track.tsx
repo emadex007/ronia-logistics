@@ -1,23 +1,28 @@
 import { useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { getSiteContent, trackShipment } from '~/fns/public'
+import { onlinePaymentEnabled, startOnlinePayment } from '~/fns/payments'
 import { SiteLayout } from '~/components/SiteLayout'
 import { StatusBadge, Timeline } from '~/components/ui'
-import { PROGRESS, dateOnly, dateTime, serviceLabel, statusLabel } from '~/lib/format'
+import { PROGRESS, dateOnly, dateTime, money, serviceLabel, statusLabel } from '~/lib/format'
 
 export const Route = createFileRoute('/track')({
   validateSearch: (s: Record<string, unknown>) => ({ code: typeof s.code === 'string' ? s.code : '' }),
   loaderDeps: ({ search }) => ({ code: search.code }),
   loader: async ({ deps }) => {
-    const [site, result] = await Promise.all([getSiteContent(), deps.code ? trackShipment({ data: { code: deps.code } }) : Promise.resolve(null)])
-    return { site, result, code: deps.code }
+    const [site, result, canPayOnline] = await Promise.all([
+      getSiteContent(),
+      deps.code ? trackShipment({ data: { code: deps.code } }) : Promise.resolve(null),
+      onlinePaymentEnabled(),
+    ])
+    return { site, result, code: deps.code, canPayOnline }
   },
   head: () => ({ meta: [{ title: 'Track your package — Ronia Logistics' }] }),
   component: TrackPage,
 })
 
 function TrackPage() {
-  const { site, result, code } = Route.useLoaderData()
+  const { site, result, code, canPayOnline } = Route.useLoaderData()
   const navigate = useNavigate()
   const [input, setInput] = useState(code)
 
@@ -101,6 +106,10 @@ function TrackPage() {
               </dl>
             </div>
 
+            {s.payment_status !== 'paid' && s.shipping_fee > 0 && s.status !== 'cancelled' && (
+              <PayBox code={s.tracking_code} fee={s.shipping_fee} enabled={canPayOnline} phone={site.settings.phone} />
+            )}
+
             <div className="card p-6">
               <h2 className="mb-5 font-display text-lg font-bold text-brand-900">Shipment history</h2>
               <Timeline events={result.events} />
@@ -117,6 +126,47 @@ function Info({ label, value }: { label: string; value: string }) {
     <div>
       <dt className="text-xs text-slate-500">{label}</dt>
       <dd className="font-medium text-slate-900">{value}</dd>
+    </div>
+  )
+}
+
+function PayBox({ code, fee, enabled, phone }: { code: string; fee: number; enabled: boolean; phone: string }) {
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  return (
+    <div className="card border-accent-400/50 bg-gradient-to-br from-white to-orange-50 p-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="font-display text-lg font-bold text-brand-900">Shipping fee due</p>
+          <p className="text-sm text-slate-600">Pay now so your package isn't held.</p>
+        </div>
+        <p className="font-display text-2xl font-extrabold text-accent-600">{money(fee)}</p>
+      </div>
+      {enabled ? (
+        <form
+          className="mt-4 flex flex-col gap-2 sm:flex-row"
+          onSubmit={async (e) => {
+            e.preventDefault()
+            setBusy(true)
+            setError('')
+            const res = await startOnlinePayment({ data: { code, email, origin: window.location.origin } })
+            if (!res.ok) {
+              setBusy(false)
+              return setError(res.error)
+            }
+            window.location.href = res.url
+          }}
+        >
+          <input type="email" required className="input" placeholder="Your email (for the receipt)" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <button className="btn-accent shrink-0" disabled={busy}>
+            {busy ? 'Opening Paystack…' : 'Pay online (card / transfer / USSD)'}
+          </button>
+        </form>
+      ) : (
+        <p className="mt-3 text-sm text-slate-600">Pay at our office, or call {phone} for transfer details.</p>
+      )}
+      {error && <p className="mt-2 text-sm text-rose-700">{error}</p>}
     </div>
   )
 }

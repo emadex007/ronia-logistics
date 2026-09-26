@@ -1,6 +1,6 @@
 // Server-only stock helpers shared by the admin side and the merchant portal.
 import { all, first } from './db'
-import type { Merchant, Product, StockMovement } from '~/lib/types'
+import type { Merchant, Payout, Product, StockMovement } from '~/lib/types'
 
 export type StatementTotals = {
   received: number
@@ -73,10 +73,38 @@ export async function getMerchantProducts(merchantId: number) {
 export async function getStatement(merchantId: number, from?: string, to?: string) {
   const merchant = await first<Merchant>('SELECT * FROM merchants WHERE id = ?', merchantId)
   if (!merchant) return null
-  const [products, movements, totals] = await Promise.all([
+  const [products, movements, totals, payouts, balance] = await Promise.all([
     getMerchantProducts(merchantId),
     getMovements(merchantId, { from, to, limit: 2000 }),
     getTotals(merchantId, from, to),
+    getPayouts(merchantId, from, to),
+    getBalance(merchantId),
   ])
-  return { merchant, products, movements, totals, from: from ?? null, to: to ?? null }
+  return { merchant, products, movements, totals, payouts, balance, from: from ?? null, to: to ?? null }
+}
+
+export async function getPayouts(merchantId: number, from?: string, to?: string) {
+  const r = rangeSql('p.paid_at', from, to)
+  return all<Payout>(
+    `SELECT p.*, u.full_name AS handled_by_name
+       FROM merchant_payouts p LEFT JOIN users u ON u.id = p.handled_by
+      WHERE ${['p.merchant_id = ?', ...r.where].join(' AND ')}
+      ORDER BY p.paid_at DESC, p.id DESC LIMIT 500`,
+    merchantId,
+    ...r.params,
+  )
+}
+
+/** What Ronia owes the merchant: all sales recorded minus all payouts made. */
+export async function getBalance(merchantId: number) {
+  const row = await first<{ sales: number; paid: number }>(
+    `SELECT
+       (SELECT COALESCE(SUM(-quantity * unit_price),0) FROM stock_movements WHERE merchant_id = ? AND type = 'sold') AS sales,
+       (SELECT COALESCE(SUM(amount),0) FROM merchant_payouts WHERE merchant_id = ?) AS paid`,
+    merchantId,
+    merchantId,
+  )
+  const sales = row?.sales ?? 0
+  const paid = row?.paid ?? 0
+  return { sales, paid, owed: sales - paid }
 }

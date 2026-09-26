@@ -2,7 +2,7 @@ import { Link, createFileRoute } from '@tanstack/react-router'
 import { getPortalDashboard } from '~/fns/portal'
 import { PageHeader, StatCard, StatusBadge } from '~/components/ui'
 import { MovementsTable } from '~/components/MerchantBits'
-import { dateTime, money } from '~/lib/format'
+import { dateOnly, dateTime, methodLabel, money } from '~/lib/format'
 
 export const Route = createFileRoute('/merchant/')({
   loader: () => getPortalDashboard(),
@@ -113,6 +113,37 @@ function PortalHome() {
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="card mt-6 p-5">
+        <h2 className="mb-3 font-display font-bold text-brand-900">Your money</h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <p className="text-xs text-slate-500">Total sales we recorded for you</p>
+            <p className="font-display text-xl font-bold text-brand-900">{money(d.balance.sales)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-slate-500">Paid to you so far</p>
+            <p className="font-display text-xl font-bold text-emerald-700">{money(d.balance.paid)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-slate-500">Balance due to you</p>
+            <p className="font-display text-xl font-bold text-accent-600">{money(d.balance.owed)}</p>
+          </div>
+        </div>
+        {d.payouts.length > 0 && (
+          <ul className="mt-4 divide-y divide-slate-100 border-t border-slate-100 text-sm">
+            {d.payouts.map((p) => (
+              <li key={p.id} className="flex justify-between gap-2 py-2">
+                <span>
+                  {dateOnly(p.paid_at)} · {methodLabel(p.method)}
+                  {p.reference ? <span className="text-slate-400"> · ref {p.reference}</span> : null}
+                </span>
+                <span className="font-semibold text-emerald-700">{money(p.amount)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {d.alerts.length > 0 && (

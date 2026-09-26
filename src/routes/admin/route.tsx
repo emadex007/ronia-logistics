@@ -23,8 +23,7 @@ const NAV: NavItem[] = [
   { to: '/admin/shipments', label: 'Shipments', icon: '📦', exact: true },
   { to: '/admin/staff', label: 'Staff', icon: '👥', roles: ['admin', 'manager'] },
   { to: '/admin/merchants', label: 'Merchants & stock', icon: '🏬' },
-  { to: '#', label: 'Income & expenses', icon: '₦', soon: true },
-  { to: '#', label: 'Reports', icon: '📊', soon: true },
+  { to: '/admin/finance', label: 'Income & expenses', icon: '₦' },
   { to: '#', label: 'Website settings', icon: '⚙', soon: true },
 ]
 

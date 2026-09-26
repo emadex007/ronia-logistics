@@ -71,3 +71,39 @@ export const MOVEMENT_TYPES = [
 ] as const
 export const movementLabel = (t: string) => MOVEMENT_TYPES.find((x) => x.value === t)?.label ?? t
 export const movementTone = (t: string) => MOVEMENT_TYPES.find((x) => x.value === t)?.tone ?? 'bg-slate-100 text-slate-700'
+
+export const INCOME_CATEGORIES = [
+  'Shipping fee',
+  'Storage / warehousing fee',
+  'Handling & packaging fee',
+  'COD commission',
+  'Pickup fee',
+  'Other income',
+]
+export const EXPENSE_CATEGORIES = [
+  'Fuel',
+  'Vehicle maintenance',
+  'Rider / driver payments',
+  'Salaries & wages',
+  'Rent',
+  'Electricity / diesel',
+  'Internet & phone',
+  'Packaging materials',
+  'Office supplies',
+  'Taxes & levies',
+  'Other expense',
+]
+export const PAY_METHODS = [
+  { value: 'cash', label: 'Cash' },
+  { value: 'transfer', label: 'Bank transfer' },
+  { value: 'pos', label: 'POS' },
+  { value: 'paystack', label: 'Paystack (online)' },
+]
+export const methodLabel = (m: string | null | undefined) => PAY_METHODS.find((x) => x.value === m)?.label ?? m ?? '—'
+
+/** First and last day (YYYY-MM-DD) of a YYYY-MM month. */
+export function monthRange(ym: string) {
+  const [y, m] = ym.split('-').map(Number)
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate()
+  return { from: `${ym}-01`, to: `${ym}-${String(last).padStart(2, '0')}` }
+}

@@ -4,7 +4,7 @@ import { getStatementFn } from '~/fns/portal'
 import { getSiteContent } from '~/fns/public'
 import { Logo } from '~/components/ui'
 import { MovementsTable } from '~/components/MerchantBits'
-import { dateOnly, dateTime, money } from '~/lib/format'
+import { dateOnly, dateTime, methodLabel, money } from '~/lib/format'
 
 type Search = { from?: string; to?: string }
 
@@ -30,7 +30,7 @@ function Statement() {
   const st = Route.useLoaderData()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: '/statement/$id' })
-  const { merchant: m, products, movements, totals, settings } = st
+  const { merchant: m, products, movements, totals, payouts, balance, settings } = st
   const units = products.reduce((s, p) => s + p.quantity, 0)
   const value = products.reduce((s, p) => s + p.quantity * p.unit_price, 0)
   const period = st.from || st.to ? `${st.from ? dateOnly(st.from) : 'Start'} – ${st.to ? dateOnly(st.to) : 'Today'}` : 'All time'
@@ -126,6 +126,40 @@ function Statement() {
 
         <h2 className="mt-8 mb-2 font-display font-bold text-brand-900">Movements ({period})</h2>
         <MovementsTable rows={movements} compact />
+
+        <h2 className="mt-8 mb-2 font-display font-bold text-brand-900">Payments to merchant ({period})</h2>
+        <table className="w-full text-sm">
+          <tbody className="divide-y divide-slate-100">
+            {payouts.length === 0 && (
+              <tr>
+                <td className="py-1.5 text-slate-500">No payouts in this period.</td>
+              </tr>
+            )}
+            {payouts.map((p) => (
+              <tr key={p.id}>
+                <td className="py-1.5">{dateOnly(p.paid_at)}</td>
+                <td className="py-1.5">{methodLabel(p.method)}</td>
+                <td className="py-1.5 text-slate-500">{p.reference ?? '—'}</td>
+                <td className="py-1.5 text-right font-semibold">{money(p.amount)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="mt-4 ml-auto max-w-xs space-y-1 rounded-lg border border-slate-200 p-4 text-sm">
+          <div className="flex justify-between">
+            <span className="text-slate-500">All-time sales</span>
+            <span>{money(balance.sales)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-500">All-time paid</span>
+            <span>{money(balance.paid)}</span>
+          </div>
+          <div className="flex justify-between border-t border-slate-200 pt-1 font-bold">
+            <span>Balance due</span>
+            <span>{money(balance.owed)}</span>
+          </div>
+        </div>
 
         <div className="mt-12 grid grid-cols-2 gap-10 text-xs text-slate-500">
           <div className="border-t border-slate-400 pt-1">For {settings.company_name}</div>

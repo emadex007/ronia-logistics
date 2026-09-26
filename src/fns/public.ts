@@ -17,7 +17,7 @@ export const trackShipment = createServerFn({ method: 'GET' })
     if (!code) return null
     const s = await first<Shipment>(
       `SELECT id, tracking_code, sender_name, receiver_name, origin_city, destination_city, destination_country,
-              service_type, quantity, weight_kg, status, current_location, estimated_delivery, delivered_at, created_at, updated_at
+              service_type, quantity, weight_kg, status, current_location, shipping_fee, payment_status, estimated_delivery, delivered_at, created_at, updated_at
          FROM shipments WHERE tracking_code = ?`,
       code,
     )

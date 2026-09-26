@@ -2,7 +2,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { all, first, todayLagos } from '~/server/db'
 import { requireUser, STAFF_ROLES } from '~/server/auth'
-import { getMerchantProducts, getMovements, getStatement, getTotals } from '~/server/stock'
+import { getBalance, getMerchantProducts, getMovements, getPayouts, getStatement, getTotals } from '~/server/stock'
 import type { Merchant, Shipment } from '~/lib/types'
 
 async function requireMerchant() {
@@ -14,7 +14,7 @@ async function requireMerchant() {
 export const getPortalDashboard = createServerFn({ method: 'GET' }).handler(async () => {
   const { user, merchantId } = await requireMerchant()
   const monthStart = todayLagos().slice(0, 8) + '01'
-  const [merchant, products, month, allTime, recent, shipments, alerts] = await Promise.all([
+  const [merchant, products, month, allTime, recent, shipments, alerts, payouts, balance] = await Promise.all([
     first<Merchant>('SELECT id, business_name, contact_name, phone, email, address FROM merchants WHERE id = ?', merchantId),
     getMerchantProducts(merchantId),
     getTotals(merchantId, monthStart),
@@ -28,8 +28,10 @@ export const getPortalDashboard = createServerFn({ method: 'GET' }).handler(asyn
       'SELECT id, title, message, created_at FROM notifications WHERE merchant_id = ? ORDER BY created_at DESC LIMIT 5',
       merchantId,
     ),
+    getPayouts(merchantId),
+    getBalance(merchantId),
   ])
-  return { user, merchant, products, month, allTime, recent, shipments, alerts }
+  return { user, merchant, products, month, allTime, recent, shipments, alerts, payouts: payouts.slice(0, 10), balance }
 })
 
 export const getPortalHistory = createServerFn({ method: 'GET' })

@@ -112,3 +112,32 @@ export type StockMovement = {
   tracking_code?: string | null
   business_name?: string
 }
+
+export type Transaction = {
+  id: number
+  type: 'income' | 'expense'
+  category: string
+  amount: number
+  description: string | null
+  method: string | null
+  reference: string | null
+  shipment_id: number | null
+  merchant_id: number | null
+  handled_by: number | null
+  txn_date: string
+  created_at: string
+  handled_by_name?: string | null
+  tracking_code?: string | null
+  business_name?: string | null
+}
+
+export type Payout = {
+  id: number
+  merchant_id: number
+  amount: number
+  method: string | null
+  reference: string | null
+  note: string | null
+  paid_at: string
+  handled_by_name?: string | null
+}

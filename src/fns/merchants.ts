@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { all, first, run, audit, db, nowIso } from '~/server/db'
 import { hashPassword, requireUser, STAFF_ROLES } from '~/server/auth'
-import { getMerchantProducts, getMovements, getTotals } from '~/server/stock'
+import { getBalance, getMerchantProducts, getMovements, getPayouts, getTotals } from '~/server/stock'
 import type { Merchant, MovementType, Product, Shipment } from '~/lib/types'
 
 const MANAGERS = ['admin', 'manager'] as const
@@ -47,7 +47,7 @@ export const getMerchant = createServerFn({ method: 'GET' })
     const merchant = await first<Merchant>('SELECT * FROM merchants WHERE id = ?', id)
     if (!merchant) return null
     const monthStart = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Lagos' }).format(new Date()).slice(0, 8) + '01'
-    const [products, movements, month, logins, shipments] = await Promise.all([
+    const [products, movements, month, logins, shipments, payouts, balance] = await Promise.all([
       getMerchantProducts(id),
       getMovements(id, { limit: 50 }),
       getTotals(id, monthStart),
@@ -59,6 +59,8 @@ export const getMerchant = createServerFn({ method: 'GET' })
         'SELECT id, tracking_code, receiver_name, destination_city, status, payment_status, cod_amount, created_at FROM shipments WHERE merchant_id = ? ORDER BY created_at DESC LIMIT 20',
         id,
       ),
+      getPayouts(id),
+      getBalance(id),
     ])
     const canSeeBank = me.role === 'admin' || me.role === 'manager'
     return {
@@ -68,6 +70,8 @@ export const getMerchant = createServerFn({ method: 'GET' })
       month,
       logins,
       shipments,
+      payouts: canSeeBank ? payouts : [],
+      balance,
     }
   })
 
@@ -280,4 +284,37 @@ export const recordStockMovement = createServerFn({ method: 'POST' })
     })
     if (res.ok) await audit(me.id, `stock.${data.type}`, 'product', Number(data.product_id), { qty })
     return res
+  })
+
+/** Record money paid out to a merchant for their sales. */
+export const recordPayout = createServerFn({ method: 'POST' })
+  .inputValidator((d: { merchant_id: number; amount: number; method: string; reference?: string; note?: string; paid_on?: string }) => d)
+  .handler(async ({ data }) => {
+    const me = await requireUser([...MANAGERS])
+    const merchantId = Number(data.merchant_id)
+    const amount = Math.round(Number(data.amount))
+    if (!amount || amount <= 0) return { ok: false as const, error: 'Enter an amount greater than zero.' }
+    const { owed } = await getBalance(merchantId)
+    if (amount > owed) {
+      return { ok: false as const, error: `That is more than the balance owed (₦${(owed / 100).toLocaleString('en-NG')}). Record the sales first.` }
+    }
+    const paidAt = /^\d{4}-\d{2}-\d{2}$/.test(data.paid_on ?? '') ? `${data.paid_on}T11:00:00.000Z` : nowIso()
+    const res = await run(
+      'INSERT INTO merchant_payouts (merchant_id, amount, method, reference, note, handled_by, paid_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      merchantId,
+      amount,
+      data.method || 'transfer',
+      data.reference?.trim() || null,
+      data.note?.trim() || null,
+      me.id,
+      paidAt,
+    )
+    await run(
+      "INSERT INTO notifications (channel, merchant_id, title, message) VALUES ('dashboard', ?, ?, ?)",
+      merchantId,
+      'Payment sent to you',
+      `Ronia Logistics paid you ₦${(amount / 100).toLocaleString('en-NG')}${data.reference ? ` (ref ${data.reference})` : ''}.`,
+    )
+    await audit(me.id, 'merchant.payout', 'merchant', merchantId, { amount, id: Number(res.meta.last_row_id) })
+    return { ok: true as const }
   })
