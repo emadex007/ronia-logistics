@@ -33,7 +33,13 @@ export function brandCss(s: Settings) {
     const n = Number(s[k])
     return Number.isFinite(n) && s[k] !== '' ? Math.min(max, Math.max(min, n)) : d
   }
-  return `:root{
+  return `html{font-size:${num('base_font_size', 16, 14, 20)}px}
+:root{
+  --logo-h:${num('logo_height', 44, 24, 120)}px;
+  --logo-name:${num('logo_name_size', 20, 12, 40)}px;
+  --footer-bg:${hex('footer_bg', '#000000')};
+  --footer-text:${hex('footer_text', '#cbd5e1')};
+  --footer-heading:${hex('footer_heading', '#ffffff')};
   --container-6xl:${num('site_width', 1200, 960, 1600)}px;
   --header-bg:${hex('header_bg', '#000000')};
   --header-text:${hex('header_text', '#ffffff')};
@@ -75,12 +81,15 @@ export function isDark(hex: string | undefined) {
   return 0.299 * r + 0.587 * g + 0.114 * b < 150
 }
 
-export const COLOR_KEYS = ['primary_color', 'accent_color', 'header_bg', 'header_text', 'btn_primary_bg', 'btn_primary_text', 'btn_primary_hover', 'btn_accent_bg', 'btn_accent_text', 'btn_accent_hover']
+export const COLOR_KEYS = ['primary_color', 'accent_color', 'header_bg', 'header_text', 'btn_primary_bg', 'btn_primary_text', 'btn_primary_hover', 'btn_accent_bg', 'btn_accent_text', 'btn_accent_hover', 'footer_bg', 'footer_text', 'footer_heading']
 export const NUMBER_KEYS: Record<string, [number, number]> = {
   site_width: [960, 1600],
   header_height: [56, 120],
   hero_height: [0, 100],
   btn_radius: [0, 30],
+  logo_height: [24, 120],
+  logo_name_size: [12, 40],
+  base_font_size: [14, 20],
 }
 
 /** Every key the Website editor is allowed to change. */
@@ -96,4 +105,6 @@ export const EDITABLE_KEYS = [
   'receipt_footer', 'tracking_prefix',
   'header_bg', 'header_text', 'header_height', 'site_width', 'hero_height',
   'btn_primary_bg', 'btn_primary_text', 'btn_primary_hover', 'btn_accent_bg', 'btn_accent_text', 'btn_accent_hover', 'btn_radius',
+  'logo_height', 'logo_show_name', 'logo_name_size', 'base_font_size',
+  'footer_bg', 'footer_text', 'footer_heading', 'footer_about', 'footer_copyright', 'footer_show_logo',
 ] as const

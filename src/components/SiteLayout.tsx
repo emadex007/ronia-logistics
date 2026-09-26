@@ -17,6 +17,7 @@ export function SiteLayout({ settings, children }: { settings: Settings; childre
   const logo = mediaUrl(settings.logo_key)
   const socials = SOCIALS.filter((s) => settings[s.key])
   const dark = isDark(settings.header_bg || '#000000')
+  const footerDark = isDark(settings.footer_bg || '#000000')
   const hover = dark ? 'hover:bg-white/10' : 'hover:bg-black/5'
   const line = dark ? 'border-white/10' : 'border-black/10'
 
@@ -87,11 +88,11 @@ export function SiteLayout({ settings, children }: { settings: Settings; childre
 
       <main className="flex-1">{children}</main>
 
-      <footer className="bg-brand-950 text-slate-300">
+      <footer style={{ background: 'var(--footer-bg, #000)', color: 'var(--footer-text, #cbd5e1)' }}>
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
           <div>
-            <Logo name={settings.company_name} light src={logo || undefined} />
-            <p className="mt-4 text-sm leading-relaxed text-slate-400">{settings.tagline}</p>
+            {settings.footer_show_logo !== '0' && <Logo name={settings.company_name} light={footerDark} src={logo || undefined} />}
+            <p className="mt-4 text-sm leading-relaxed whitespace-pre-line opacity-80">{settings.footer_about || settings.tagline}</p>
             {socials.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-2">
                 {socials.map((s) => (
@@ -100,7 +101,7 @@ export function SiteLayout({ settings, children }: { settings: Settings; childre
                     href={settings[s.key]}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-full border border-white/15 px-3 py-1 text-xs hover:bg-white/10 hover:text-white"
+                    className="rounded-full border border-current/20 px-3 py-1 text-xs opacity-80 hover:opacity-100"
                   >
                     {s.label}
                   </a>
@@ -109,63 +110,63 @@ export function SiteLayout({ settings, children }: { settings: Settings; childre
             )}
           </div>
           <div className="text-sm">
-            <p className="font-semibold text-white">Company</p>
+            <p className="font-semibold" style={{ color: 'var(--footer-heading, #fff)' }}>Company</p>
             <ul className="mt-3 space-y-2">
               <li>
-                <Link to="/about" className="hover:text-white">
+                <Link to="/about" className="hover:underline hover:opacity-100">
                   About us
                 </Link>
               </li>
               <li>
-                <Link to="/services" className="hover:text-white">
+                <Link to="/services" className="hover:underline hover:opacity-100">
                   Services
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="hover:text-white">
+                <Link to="/contact" className="hover:underline hover:opacity-100">
                   Contact
                 </Link>
               </li>
               <li>
-                <Link to="/track" search={{ code: '' }} className="hover:text-white">
+                <Link to="/track" search={{ code: '' }} className="hover:underline hover:opacity-100">
                   Track a package
                 </Link>
               </li>
             </ul>
           </div>
           <div className="text-sm">
-            <p className="font-semibold text-white">Accounts</p>
+            <p className="font-semibold" style={{ color: 'var(--footer-heading, #fff)' }}>Accounts</p>
             <ul className="mt-3 space-y-2">
               <li>
-                <Link to="/login" className="hover:text-white">
+                <Link to="/login" className="hover:underline hover:opacity-100">
                   Customer login
                 </Link>
               </li>
               <li>
-                <Link to="/merchant/login" className="hover:text-white">
+                <Link to="/merchant/login" className="hover:underline hover:opacity-100">
                   Merchant login
                 </Link>
               </li>
               <li>
-                <Link to="/merchant/login" search={{ tab: 'apply' }} className="hover:text-white">
+                <Link to="/merchant/login" search={{ tab: 'apply' }} className="hover:underline hover:opacity-100">
                   Become a merchant
                 </Link>
               </li>
             </ul>
           </div>
           <div className="text-sm">
-            <p className="font-semibold text-white">Contact</p>
+            <p className="font-semibold" style={{ color: 'var(--footer-heading, #fff)' }}>Contact</p>
             <ul className="mt-3 space-y-2">
               <li>📍 {settings.address}</li>
               <li>
                 📞{' '}
-                <a href={`tel:${settings.phone}`} className="hover:text-white">
+                <a href={`tel:${settings.phone}`} className="hover:underline hover:opacity-100">
                   {settings.phone}
                 </a>
               </li>
               <li>
                 ✉️{' '}
-                <a href={`mailto:${settings.email}`} className="hover:text-white">
+                <a href={`mailto:${settings.email}`} className="hover:underline hover:opacity-100">
                   {settings.email}
                 </a>
               </li>
@@ -173,8 +174,10 @@ export function SiteLayout({ settings, children }: { settings: Settings; childre
             </ul>
           </div>
         </div>
-        <div className="border-t border-white/10 py-5 text-center text-xs text-slate-500">
-          © {new Date().getFullYear()} {settings.company_name}. All rights reserved.
+        <div className="border-t border-current/10 py-5 text-center text-xs opacity-70">
+          {(settings.footer_copyright || '© {year} {company}. All rights reserved.')
+            .replace('{year}', String(new Date().getFullYear()))
+            .replace('{company}', settings.company_name || '')}
         </div>
       </footer>
 

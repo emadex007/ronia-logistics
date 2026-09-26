@@ -31,7 +31,7 @@ function MerchantLayout() {
       <header className="no-print bg-brand-950 text-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <Logo light name={site.company_name} src={mediaUrl(site.logo_key) || undefined} />
+            <Logo light compact />
             <span className="hidden rounded-full bg-accent-500/20 px-2.5 py-0.5 text-xs font-semibold text-orange-200 sm:inline">Merchant portal</span>
           </div>
           <div className="flex items-center gap-3 text-sm">

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, useRouter, redirect } from '@tanstack/react-router'
 import { addTransaction, deleteTransaction, getFinance } from '~/fns/finance'
 import { Alert, Field, PageHeader, StatCard } from '~/components/ui'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, PAY_METHODS, dateOnly, methodLabel, money, monthRange, toKobo } from '~/lib/format'
@@ -15,6 +15,9 @@ function resolveRange(s: Search) {
 }
 
 export const Route = createFileRoute('/admin/finance')({
+  beforeLoad: ({ context }) => {
+    if (!(context.user.perms.includes('finance') || context.user.perms.includes('record_money'))) throw redirect({ to: '/admin' })
+  },
   validateSearch: (s: Record<string, unknown>): Search => ({
     month: typeof s.month === 'string' && /^\d{4}-\d{2}$/.test(s.month) ? s.month : undefined,
     from: typeof s.from === 'string' && s.from ? s.from : undefined,

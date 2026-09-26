@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Link, createFileRoute, useNavigate, redirect } from '@tanstack/react-router'
 import { listShipments } from '~/fns/shipments'
 import { PageHeader, PaymentBadge, StatusBadge } from '~/components/ui'
 import { STATUSES, dateTime, money } from '~/lib/format'
@@ -7,6 +7,9 @@ import { STATUSES, dateTime, money } from '~/lib/format'
 type Search = { q?: string; status?: string; page?: number }
 
 export const Route = createFileRoute('/admin/shipments/')({
+  beforeLoad: ({ context }) => {
+    if (!context.user.perms.includes('shipments')) throw redirect({ to: '/admin' })
+  },
   validateSearch: (s: Record<string, unknown>): Search => ({
     q: typeof s.q === 'string' && s.q ? s.q : undefined,
     status: typeof s.status === 'string' && s.status ? s.status : undefined,

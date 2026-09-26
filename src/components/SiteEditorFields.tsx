@@ -77,7 +77,7 @@ export function MediaField({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const url = mediaUrl(value)
-  const accept = kind === 'video' ? 'video/mp4,video/webm' : kind === 'icon' ? 'image/png,image/x-icon,image/vnd.microsoft.icon,image/webp' : 'image/jpeg,image/png,image/webp,image/gif'
+  const accept = kind === 'video' ? 'video/mp4,video/webm' : kind === 'icon' ? 'image/png,image/x-icon,image/vnd.microsoft.icon,image/webp,image/jpeg,image/gif' : 'image/jpeg,image/png,image/webp,image/gif'
 
   return (
     <div>

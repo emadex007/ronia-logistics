@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, createFileRoute, notFound, useRouter } from '@tanstack/react-router'
+import { Link, createFileRoute, notFound, useRouter, redirect } from '@tanstack/react-router'
 import { createMerchantLogin, getMerchant, recordPayout, recordStockMovement, saveMerchant, saveProduct, setMerchantLogin } from '~/fns/merchants'
 import { Alert, Field, PageHeader, StatCard, StatusBadge } from '~/components/ui'
 import { MerchantFields, MovementsTable } from '~/components/MerchantBits'
@@ -7,6 +7,9 @@ import { MOVEMENT_TYPES, PAY_METHODS, dateOnly, dateTime, fromKobo, methodLabel,
 import type { MovementType, Product } from '~/lib/types'
 
 export const Route = createFileRoute('/admin/merchants/$id')({
+  beforeLoad: ({ context }) => {
+    if (!context.user.perms.includes('merchants')) throw redirect({ to: '/admin' })
+  },
   loader: async ({ params }) => {
     const res = await getMerchant({ data: { id: Number(params.id) } })
     if (!res) throw notFound()
@@ -22,7 +25,8 @@ function MerchantDetail() {
   const { merchant: m, products, movements, month, logins, shipments, payouts, balance } = Route.useLoaderData()
   const { user } = Route.useRouteContext()
   const router = useRouter()
-  const canManage = user.role === 'admin' || user.role === 'manager'
+  const canManage = user.perms.includes('merchants')
+  const canPay = user.perms.includes('finance')
   const [msg, setMsg] = useState<Msg>(null)
   const [busy, setBusy] = useState(false)
   const [panel, setPanel] = useState<'none' | 'product' | 'edit' | 'login'>('none')
@@ -348,7 +352,7 @@ function MerchantDetail() {
                 <span className={balance.owed > 0 ? 'text-accent-600' : 'text-emerald-700'}>{money(balance.owed)}</span>
               </div>
             </div>
-            {canManage && balance.owed > 0 && (
+            {canPay && balance.owed > 0 && (
               <form
                 className="space-y-2 border-t border-slate-100 pt-3"
                 onSubmit={async (e) => {
@@ -467,7 +471,7 @@ function MerchantDetail() {
             )}
           </div>
 
-          {canManage && (m.bank_name || m.account_number) && (
+          {canPay && (m.bank_name || m.account_number) && (
             <div className="card space-y-1 p-5 text-sm">
               <h2 className="font-display font-bold text-brand-900">Payout account</h2>
               <p>{m.account_name}</p>

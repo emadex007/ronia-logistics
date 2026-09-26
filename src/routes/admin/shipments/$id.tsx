@@ -1,11 +1,14 @@
 import { useState, type ReactNode } from 'react'
-import { Link, createFileRoute, notFound, useRouter } from '@tanstack/react-router'
+import { Link, createFileRoute, notFound, useRouter, redirect } from '@tanstack/react-router'
 import { getShipment, markShipmentPaid, updateShipmentStatus } from '~/fns/shipments'
 import { Alert, Field, PageHeader, PaymentBadge, StatusBadge, Timeline } from '~/components/ui'
 import { STATUSES, dateOnly, dateTime, money, serviceLabel } from '~/lib/format'
 import type { ShipmentStatus } from '~/lib/types'
 
 export const Route = createFileRoute('/admin/shipments/$id')({
+  beforeLoad: ({ context }) => {
+    if (!context.user.perms.includes('shipments')) throw redirect({ to: '/admin' })
+  },
   validateSearch: (s: Record<string, unknown>): { created?: number } => (s.created ? { created: 1 } : {}),
   loader: async ({ params }) => {
     const res = await getShipment({ data: { id: Number(params.id) } })

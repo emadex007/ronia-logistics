@@ -16,7 +16,7 @@ export const Route = createFileRoute('/report')({
   }),
   beforeLoad: async () => {
     const me = await getMe()
-    if (!me || (me.role !== 'admin' && me.role !== 'manager')) throw redirect({ to: '/staff/login' })
+    if (!me || !me.perms?.includes('finance')) throw redirect({ to: '/staff/login' })
     return { me }
   },
   loaderDeps: ({ search }) => search,
@@ -65,7 +65,7 @@ function Report() {
       <div className="mx-auto max-w-4xl bg-white p-8 shadow-sm print:max-w-none print:p-0 print:shadow-none">
         <div className="flex items-start justify-between gap-6 border-b-2 border-brand-900 pb-5">
           <div>
-            <Logo name={d.settings.company_name} />
+            <Logo name={d.settings.company_name} compact />
             <p className="mt-2 text-xs text-slate-600">{d.settings.address}</p>
           </div>
           <div className="text-right">

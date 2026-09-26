@@ -61,6 +61,7 @@ export const getStatementFn = createServerFn({ method: 'GET' })
   .inputValidator((d: { merchantId?: number; from?: string; to?: string }) => d)
   .handler(async ({ data }) => {
     const user = await requireUser([...STAFF_ROLES, 'merchant'])
+    if (user.role !== 'merchant' && !user.perms.includes('merchants')) return null
     const merchantId = user.role === 'merchant' ? user.merchant_id : Number(data.merchantId)
     if (!merchantId) return null
     const st = await getStatement(merchantId, data.from || undefined, data.to || undefined)

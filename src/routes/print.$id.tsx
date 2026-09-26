@@ -53,7 +53,7 @@ function PrintPage() {
         <div className="mx-auto max-w-2xl bg-white p-8 shadow-sm print:max-w-none print:p-0 print:shadow-none">
           <div className="flex items-start justify-between gap-6 border-b-2 border-brand-900 pb-5">
             <div>
-              <Logo name={settings.company_name} />
+              <Logo name={settings.company_name} compact />
               <p className="mt-2 text-xs text-slate-600">{settings.address}</p>
               <p className="text-xs text-slate-600">
                 {settings.phone} · {settings.email}

@@ -1,3 +1,5 @@
+import type { Perm } from './permissions'
+
 export type Role = 'admin' | 'manager' | 'staff' | 'rider' | 'merchant' | 'customer'
 
 export type SessionUser = {
@@ -8,6 +10,8 @@ export type SessionUser = {
   branch: string | null
   merchant_id: number | null
   can_edit_site?: number
+  permissions?: string | null
+  perms: Perm[]
 }
 
 export type ShipmentStatus =

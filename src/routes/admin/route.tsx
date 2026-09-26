@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, Outlet, createFileRoute, redirect, useRouter } from '@tanstack/react-router'
 import { getMe, logout } from '~/fns/auth'
 import { Logo } from '~/components/ui'
+import type { Perm } from '~/lib/permissions'
 import { ROLE_LABELS } from '~/lib/format'
 import { useSiteSettings } from '~/components/useSite'
 import { mediaUrl } from '~/lib/site'
@@ -18,16 +19,16 @@ export const Route = createFileRoute('/admin')({
   component: AdminLayout,
 })
 
-type NavItem = { to: string; label: string; icon: string; exact?: boolean; roles?: string[]; soon?: boolean }
+type NavItem = { to: string; label: string; icon: string; exact?: boolean; perms?: Perm[]; soon?: boolean }
 
 const NAV: NavItem[] = [
   { to: '/admin', label: 'Dashboard', icon: '▦', exact: true },
-  { to: '/admin/shipments/new', label: 'New shipment', icon: '＋' },
-  { to: '/admin/shipments', label: 'Shipments', icon: '📦', exact: true },
-  { to: '/admin/staff', label: 'Staff', icon: '👥', roles: ['admin', 'manager'] },
-  { to: '/admin/merchants', label: 'Merchants & stock', icon: '🏬' },
-  { to: '/admin/finance', label: 'Income & expenses', icon: '₦' },
-  { to: '/admin/website', label: 'Website', icon: '🎨', roles: ['site_editor'] },
+  { to: '/admin/shipments/new', label: 'New shipment', icon: '＋', perms: ['shipments'] },
+  { to: '/admin/shipments', label: 'Shipments', icon: '📦', exact: true, perms: ['shipments'] },
+  { to: '/admin/merchants', label: 'Merchants & stock', icon: '🏬', perms: ['merchants'] },
+  { to: '/admin/finance', label: 'Income & expenses', icon: '₦', perms: ['finance', 'record_money'] },
+  { to: '/admin/staff', label: 'Staff', icon: '👥', perms: ['staff'] },
+  { to: '/admin/website', label: 'Website', icon: '🎨', perms: ['website'] },
 ]
 
 function AdminLayout() {
@@ -36,13 +37,12 @@ function AdminLayout() {
   const router = useRouter()
   const [open, setOpen] = useState(false)
 
-  const canEditSite = user.role === 'admin' || !!user.can_edit_site
-  const items = NAV.filter((n) => !n.roles || n.roles.includes(user.role) || (n.roles.includes('site_editor') && canEditSite))
+  const items = NAV.filter((n) => !n.perms || n.perms.some((p) => user.perms.includes(p)))
 
   const sidebar = (
     <nav className="flex h-full flex-col gap-1 p-4">
       <div className="mb-6 px-2">
-        <Logo light name={site.company_name} src={mediaUrl(site.logo_key) || undefined} />
+        <Logo light compact />
       </div>
       {items.map((n) =>
         n.soon ? (
@@ -91,7 +91,7 @@ function AdminLayout() {
 
       {/* Mobile top bar */}
       <div className="no-print sticky top-0 z-30 flex items-center justify-between bg-brand-950 px-4 py-3 md:hidden">
-        <Logo light name={site.company_name} src={mediaUrl(site.logo_key) || undefined} />
+        <Logo light compact />
         <button className="rounded-lg border border-white/20 px-3 py-1.5 text-sm text-white" onClick={() => setOpen(true)}>
           Menu
         </button>

@@ -1,7 +1,7 @@
 // Customer self-registration, merchant applications (admin approval) and the customer portal.
 import { createServerFn } from '@tanstack/react-start'
 import { all, first, run, audit, db, nowIso } from '~/server/db'
-import { createSession, hashPassword, requireUser } from '~/server/auth'
+import { createSession, hashPassword, requirePerm, requireUser, STAFF_ROLES } from '~/server/auth'
 import type { Shipment } from '~/lib/types'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -141,8 +141,8 @@ export type Application = {
 export const listApplications = createServerFn({ method: 'GET' })
   .inputValidator((d: { status?: 'pending' | 'approved' | 'rejected' | 'all' }) => d)
   .handler(async ({ data }) => {
-    const me = await requireUser(['admin', 'manager', 'staff', 'rider'])
-    if (me.role !== 'admin' && me.role !== 'manager') return [] as Application[]
+    const me = await requireUser(STAFF_ROLES)
+    if (!me.perms.includes('merchants')) return [] as Application[]
     const status = data.status ?? 'pending'
     return all<Application>(
       `SELECT a.id, a.business_name, a.contact_name, a.phone, a.email, a.address, a.what_they_sell, a.status, a.reject_reason,
@@ -155,8 +155,8 @@ export const listApplications = createServerFn({ method: 'GET' })
   })
 
 export const pendingApplicationCount = createServerFn({ method: 'GET' }).handler(async () => {
-  const me = await requireUser(['admin', 'manager', 'staff', 'rider'])
-  if (me.role !== 'admin' && me.role !== 'manager') return 0
+  const me = await requireUser(STAFF_ROLES)
+  if (!me.perms.includes('merchants')) return 0
   return (await first<{ n: number }>("SELECT COUNT(*) AS n FROM merchant_applications WHERE status = 'pending'"))?.n ?? 0
 })
 
@@ -164,7 +164,7 @@ export const pendingApplicationCount = createServerFn({ method: 'GET' }).handler
 export const approveApplication = createServerFn({ method: 'POST' })
   .inputValidator((d: { id: number }) => d)
   .handler(async ({ data }) => {
-    const me = await requireUser(['admin', 'manager'])
+    const me = await requirePerm('merchants')
     const app = await first<Application & { password_hash: string }>('SELECT * FROM merchant_applications WHERE id = ?', Number(data.id))
     if (!app) return { ok: false as const, error: 'Application not found.' }
     if (app.status !== 'pending') return { ok: false as const, error: `This application was already ${app.status}.` }
@@ -198,7 +198,7 @@ export const approveApplication = createServerFn({ method: 'POST' })
 export const rejectApplication = createServerFn({ method: 'POST' })
   .inputValidator((d: { id: number; reason: string }) => d)
   .handler(async ({ data }) => {
-    const me = await requireUser(['admin', 'manager'])
+    const me = await requirePerm('merchants')
     const app = await first<Application>('SELECT * FROM merchant_applications WHERE id = ?', Number(data.id))
     if (!app) return { ok: false as const, error: 'Application not found.' }
     if (app.status !== 'pending') return { ok: false as const, error: `This application was already ${app.status}.` }

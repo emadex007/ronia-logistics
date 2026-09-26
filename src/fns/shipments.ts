@@ -1,6 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 import { all, first, run, audit, nowIso, todayLagos, db } from '~/server/db'
-import { requireUser, STAFF_ROLES } from '~/server/auth'
+import { requirePerm } from '~/server/auth'
 import { statusLabel } from '~/lib/format'
 import type { Shipment, ShipmentEvent, ShipmentStatus } from '~/lib/types'
 
@@ -37,7 +37,7 @@ export type ShipmentFilters = { q?: string; status?: string; page?: number }
 export const listShipments = createServerFn({ method: 'GET' })
   .inputValidator((d: ShipmentFilters) => d)
   .handler(async ({ data }) => {
-    await requireUser(STAFF_ROLES)
+    await requirePerm('shipments')
     const where: string[] = []
     const params: unknown[] = []
     if (data.q?.trim()) {
@@ -67,7 +67,7 @@ export const listShipments = createServerFn({ method: 'GET' })
 export const getShipment = createServerFn({ method: 'GET' })
   .inputValidator((d: { id: number }) => d)
   .handler(async ({ data }) => {
-    await requireUser(STAFF_ROLES)
+    await requirePerm('shipments')
     const shipment = await first<Shipment>(
       `SELECT s.*, cb.full_name AS created_by_name, rb.full_name AS received_by_name,
               db.full_name AS dispatched_by_name, dl.full_name AS delivered_by_name
@@ -118,7 +118,7 @@ export type NewShipmentInput = {
 export const createShipment = createServerFn({ method: 'POST' })
   .inputValidator((d: NewShipmentInput) => d)
   .handler(async ({ data }) => {
-    const user = await requireUser(STAFF_ROLES)
+    const user = await requirePerm('shipments')
     const required: (keyof NewShipmentInput)[] = ['sender_name', 'sender_phone', 'receiver_name', 'receiver_phone', 'receiver_address', 'destination_city']
     for (const k of required) {
       if (!String(data[k] ?? '').trim()) return { ok: false as const, error: `Please fill in ${k.replace(/_/g, ' ')}.` }
@@ -212,7 +212,7 @@ export const createShipment = createServerFn({ method: 'POST' })
 export const updateShipmentStatus = createServerFn({ method: 'POST' })
   .inputValidator((d: { id: number; status: ShipmentStatus; location?: string; note?: string }) => d)
   .handler(async ({ data }) => {
-    const user = await requireUser(STAFF_ROLES)
+    const user = await requirePerm('shipments')
     const s = await first<Shipment>('SELECT * FROM shipments WHERE id = ?', Number(data.id))
     if (!s) return { ok: false as const, error: 'Shipment not found.' }
     const t = nowIso()
@@ -250,7 +250,7 @@ export const updateShipmentStatus = createServerFn({ method: 'POST' })
 export const markShipmentPaid = createServerFn({ method: 'POST' })
   .inputValidator((d: { id: number; method: string }) => d)
   .handler(async ({ data }) => {
-    const user = await requireUser(STAFF_ROLES)
+    const user = await requirePerm('shipments')
     const s = await first<Shipment>('SELECT * FROM shipments WHERE id = ?', Number(data.id))
     if (!s) return { ok: false as const, error: 'Shipment not found.' }
     if (s.payment_status === 'paid') return { ok: false as const, error: 'This shipment is already marked as paid.' }

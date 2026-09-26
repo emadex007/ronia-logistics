@@ -1,13 +1,14 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
 import { createStaff, listStaff, updateStaff } from '~/fns/staff'
 import { Alert, Field, PageHeader } from '~/components/ui'
 import { ROLE_LABELS, dateTime } from '~/lib/format'
 import type { Role } from '~/lib/types'
+import { PERMISSIONS, ROLE_DEFAULTS, effectivePerms, permLabel, type Perm } from '~/lib/permissions'
 
 export const Route = createFileRoute('/admin/staff')({
   beforeLoad: ({ context }) => {
-    if (!['admin', 'manager'].includes(context.user.role)) throw redirect({ to: '/admin' })
+    if (!context.user.perms.includes('staff')) throw redirect({ to: '/admin' })
   },
   loader: () => listStaff(),
   head: () => ({ meta: [{ title: 'Staff — Ronia Logistics' }] }),
@@ -22,6 +23,7 @@ function StaffPage() {
   const router = useRouter()
   const isAdmin = user.role === 'admin'
   const [showForm, setShowForm] = useState(false)
+  const [editing, setEditing] = useState<number | null>(null)
   const [msg, setMsg] = useState<{ tone: 'error' | 'success'; text: string } | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -111,7 +113,7 @@ function StaffPage() {
               <th className="px-4 py-3">Role</th>
               <th className="px-4 py-3">Branch</th>
               <th className="px-4 py-3">Updates made</th>
-              <th className="px-4 py-3" title="Can change the website's pictures, text, logo and colours">Website editor</th>
+              <th className="px-4 py-3">Access</th>
               <th className="px-4 py-3">Last login</th>
               <th className="px-4 py-3">Status</th>
               {isAdmin && <th className="px-4 py-3 text-right">Actions</th>}
@@ -119,7 +121,8 @@ function StaffPage() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {staff.map((s) => (
-              <tr key={s.id} className={s.is_active ? '' : 'opacity-50'}>
+              <Fragment key={s.id}>
+              <tr className={s.is_active ? '' : 'opacity-50'}>
                 <td className="px-4 py-3">
                   <p className="font-semibold">{s.full_name}</p>
                   <p className="text-xs text-slate-500">
@@ -149,25 +152,21 @@ function StaffPage() {
                 <td className="px-4 py-3">{s.shipments_handled}</td>
                 <td className="px-4 py-3">
                   {s.role === 'admin' ? (
-                    <span className="text-xs text-slate-500">Always</span>
-                  ) : isAdmin ? (
-                    <label className="inline-flex cursor-pointer items-center gap-2 text-xs">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 accent-[var(--color-accent-500)]"
-                        checked={!!s.can_edit_site}
-                        disabled={busy}
-                        onChange={(e) =>
-                          act(
-                            () => updateStaff({ data: { id: s.id, can_edit_site: e.target.checked } }),
-                            e.target.checked ? `${s.full_name} can now edit the website.` : `${s.full_name} can no longer edit the website.`,
-                          )
-                        }
-                      />
-                      {s.can_edit_site ? 'Yes' : 'No'}
-                    </label>
+                    <span className="text-xs text-slate-500">Everything</span>
                   ) : (
-                    <span className="text-xs">{s.can_edit_site ? 'Yes' : 'No'}</span>
+                    <button
+                      type="button"
+                      className="text-left text-xs"
+                      disabled={!isAdmin}
+                      onClick={() => setEditing(editing === s.id ? null : s.id)}
+                      title={effectivePerms(s).map(permLabel).join(', ') || 'No sections'}
+                    >
+                      <span className="font-semibold text-brand-900">
+                        {effectivePerms(s).length} of {PERMISSIONS.length} sections
+                      </span>
+                      {s.permissions ? <span className="ml-1 text-accent-600">(custom)</span> : null}
+                      {isAdmin && <span className="block text-brand-500 hover:underline">{editing === s.id ? 'Close' : 'Change access'}</span>}
+                    </button>
                   )}
                 </td>
                 <td className="px-4 py-3 text-xs text-slate-500">{dateTime(s.last_login_at)}</td>
@@ -207,10 +206,80 @@ function StaffPage() {
                   </td>
                 )}
               </tr>
+              {editing === s.id && isAdmin && s.role !== 'admin' && (
+                <tr className="bg-orange-50/60">
+                  <td colSpan={9} className="px-4 py-4">
+                    <AccessEditor
+                      key={s.id + (s.permissions ?? '')}
+                      name={s.full_name}
+                      role={s.role}
+                      current={effectivePerms(s)}
+                      custom={!!s.permissions}
+                      busy={busy}
+                      onSave={(perms) => act(() => updateStaff({ data: { id: s.id, permissions: perms } }), `Access updated for ${s.full_name}.`).then((ok) => ok && setEditing(null))}
+                      onReset={() => act(() => updateStaff({ data: { id: s.id, permissions: null } }), `${s.full_name} is back to the default access for their role.`).then((ok) => ok && setEditing(null))}
+                    />
+                  </td>
+                </tr>
+              )}
+              </Fragment>
             ))}
           </tbody>
         </table>
       </div>
     </>
+  )
+}
+
+function AccessEditor({
+  name,
+  role,
+  current,
+  custom,
+  busy,
+  onSave,
+  onReset,
+}: {
+  name: string
+  role: string
+  current: Perm[]
+  custom: boolean
+  busy: boolean
+  onSave: (perms: Perm[]) => void
+  onReset: () => void
+}) {
+  const [sel, setSel] = useState<Perm[]>(current)
+  const toggle = (p: Perm) => setSel((x) => (x.includes(p) ? x.filter((y) => y !== p) : [...x, p]))
+  return (
+    <div>
+      <p className="mb-3 text-sm font-semibold text-brand-900">
+        What can {name} open?{' '}
+        <span className="font-normal text-slate-500">
+          ({custom ? 'custom access' : `default for ${ROLE_LABELS[role] ?? role}: ${(ROLE_DEFAULTS[role] ?? []).map(permLabel).join(', ') || 'nothing'}`})
+        </span>
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {PERMISSIONS.map((p) => (
+          <label key={p.key} className={`flex cursor-pointer gap-3 rounded-xl border bg-white p-3 text-sm ${sel.includes(p.key) ? 'border-accent-400' : 'border-slate-200'}`}>
+            <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[var(--color-accent-500)]" checked={sel.includes(p.key)} onChange={() => toggle(p.key)} />
+            <span>
+              <span className="block font-semibold">{p.label}</span>
+              <span className="block text-xs text-slate-500">{p.hint}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button type="button" className="btn-primary" disabled={busy} onClick={() => onSave(sel)}>
+          Save access
+        </button>
+        {custom && (
+          <button type="button" className="btn-ghost" disabled={busy} onClick={onReset}>
+            Reset to role default
+          </button>
+        )}
+        <span className="self-center text-xs text-slate-500">The Dashboard is always available. Changes apply on their next page load.</span>
+      </div>
+    </div>
   )
 }

@@ -15,7 +15,7 @@ export const getDashboard = createServerFn({ method: 'GET' }).handler(async () =
   const deliveredToday =
     (await first<{ n: number }>("SELECT COUNT(*) AS n FROM shipments WHERE status = 'delivered' AND date(delivered_at, '+1 hour') = ?", today))?.n ?? 0
 
-  const canSeeMoney = user.role === 'admin' || user.role === 'manager'
+  const canSeeMoney = user.perms.includes('finance')
   let finance = null as null | { income: number; expense: number }
   if (canSeeMoney) {
     const f = await first<{ income: number; expense: number }>(
@@ -32,12 +32,14 @@ export const getDashboard = createServerFn({ method: 'GET' }).handler(async () =
       "SELECT COUNT(*) AS n, COALESCE(SUM(shipping_fee),0) AS total FROM shipments WHERE payment_status != 'paid' AND status != 'cancelled'",
     )) ?? { n: 0, total: 0 }
 
-  const recent = await all<Shipment>(
-    `SELECT id, tracking_code, receiver_name, destination_city, destination_country, status, payment_status, created_at
-       FROM shipments ORDER BY created_at DESC LIMIT 8`,
-  )
+  const recent = user.perms.includes('shipments')
+    ? await all<Shipment>(
+        `SELECT id, tracking_code, receiver_name, destination_city, destination_country, status, payment_status, created_at
+           FROM shipments ORDER BY created_at DESC LIMIT 8`,
+      )
+    : []
 
-  const pendingApplications = canSeeMoney
+  const pendingApplications = user.perms.includes('merchants')
     ? ((await first<{ n: number }>("SELECT COUNT(*) AS n FROM merchant_applications WHERE status = 'pending'"))?.n ?? 0)
     : 0
 

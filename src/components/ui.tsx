@@ -1,22 +1,35 @@
 import type { ReactNode } from 'react'
 import { statusLabel, statusTone } from '~/lib/format'
+import { mediaUrl } from '~/lib/site'
+import { useSiteSettings } from './useSite'
 
-export function Logo({ name = 'Ronia Logistics', light = false, src }: { name?: string; light?: boolean; src?: string }) {
-  if (src) {
-    return (
-      <span className="inline-flex items-center gap-2.5">
-        <img src={src} alt={name} className={`h-10 w-auto max-w-[180px] object-contain ${light ? 'rounded bg-white/95 px-1.5 py-1' : ''}`} />
-      </span>
-    )
-  }
+/**
+ * Company logo. Uploaded logos keep their transparency (no white box) and use the size set in
+ * Admin → Website → Brand. `compact` caps the height for dashboards and receipts.
+ */
+export function Logo({ name, light = false, src, compact = false }: { name?: string; light?: boolean; src?: string; compact?: boolean }) {
+  const site = useSiteSettings()
+  const company = name || site.company_name || 'Ronia Logistics'
+  const logo = src ?? (mediaUrl(site.logo_key) || undefined)
+  const showName = !logo || site.logo_show_name !== '0'
+  const h = compact ? 'min(var(--logo-h, 44px), 40px)' : 'var(--logo-h, 44px)'
+  const nameSize = compact ? 'min(var(--logo-name, 20px), 18px)' : 'var(--logo-name, 20px)'
   return (
     <span className="inline-flex items-center gap-2.5">
-      <svg viewBox="0 0 64 64" className="h-9 w-9 shrink-0" aria-hidden>
-        <rect width="64" height="64" rx="14" className={light ? 'fill-white' : 'fill-brand-900'} />
-        <path d="M16 22l16-8 16 8v20l-16 8-16-8z" fill="none" className="stroke-accent-500" strokeWidth="4" strokeLinejoin="round" />
-        <path d="M16 22l16 8 16-8M32 30v20" fill="none" className={light ? 'stroke-brand-900' : 'stroke-white'} strokeWidth="4" strokeLinejoin="round" />
-      </svg>
-      <span className={`font-display text-lg font-bold tracking-tight ${light ? 'text-white' : 'text-brand-900'}`}>{name}</span>
+      {logo ? (
+        <img src={logo} alt={company} className="w-auto max-w-[260px] object-contain" style={{ height: h }} />
+      ) : (
+        <svg viewBox="0 0 64 64" className="shrink-0" style={{ height: h, width: h }} aria-hidden>
+          <rect width="64" height="64" rx="14" className={light ? 'fill-white' : 'fill-brand-900'} />
+          <path d="M16 22l16-8 16 8v20l-16 8-16-8z" fill="none" className="stroke-accent-500" strokeWidth="4" strokeLinejoin="round" />
+          <path d="M16 22l16 8 16-8M32 30v20" fill="none" className={light ? 'stroke-brand-900' : 'stroke-white'} strokeWidth="4" strokeLinejoin="round" />
+        </svg>
+      )}
+      {showName && (
+        <span className={`font-display leading-tight font-bold tracking-tight ${light ? 'text-white' : 'text-brand-900'}`} style={{ fontSize: nameSize }}>
+          {company}
+        </span>
+      )}
     </span>
   )
 }

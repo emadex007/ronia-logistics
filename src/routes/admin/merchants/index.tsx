@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
+import { Link, createFileRoute, useNavigate, useRouter, redirect } from '@tanstack/react-router'
 import { listMerchants, saveMerchant } from '~/fns/merchants'
 import { approveApplication, listApplications, rejectApplication } from '~/fns/accounts'
 import { Alert, PageHeader } from '~/components/ui'
@@ -7,6 +7,9 @@ import { MerchantFields } from '~/components/MerchantBits'
 import { dateTime, money } from '~/lib/format'
 
 export const Route = createFileRoute('/admin/merchants/')({
+  beforeLoad: ({ context }) => {
+    if (!context.user.perms.includes('merchants')) throw redirect({ to: '/admin' })
+  },
   validateSearch: (s: Record<string, unknown>): { q?: string } => (typeof s.q === 'string' && s.q ? { q: s.q } : {}),
   loaderDeps: ({ search }) => search,
   loader: async ({ deps }) => {
@@ -23,7 +26,7 @@ function MerchantsPage() {
   const search = Route.useSearch()
   const navigate = useNavigate({ from: '/admin/merchants/' })
   const router = useRouter()
-  const canManage = user.role === 'admin' || user.role === 'manager'
+  const canManage = user.perms.includes('merchants')
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)

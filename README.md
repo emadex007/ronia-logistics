@@ -79,6 +79,13 @@ plus the uploaded photos/logo. On the other site, Website → **⬆ Import** tha
 | Merchants | `/merchant/login` | "Merchant login" button on the website. New merchants **apply** here; an admin must approve before they can sign in |
 | Customers | `/login` | Optional. Anyone can track without an account. Shipments whose sender email matches the account appear automatically |
 
+## Staff access
+
+Admin → **Staff** → **Change access** lets the Administrator tick exactly which sections each staff member can open:
+Shipments, Merchants & stock, Record income & expenses, All finances & reports, View staff, Website editor.
+Staff without custom access get their role's defaults. The Administrator always has everything. Access is enforced on the server,
+not just hidden in the menu.
+
 ## Roles
 
 - **Administrator**: everything, including adding and disabling staff

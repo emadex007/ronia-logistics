@@ -1,11 +1,14 @@
 import { useState, type FormEvent } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, redirect } from '@tanstack/react-router'
 import { createShipment } from '~/fns/shipments'
 import { merchantOptions } from '~/fns/merchants'
 import { Alert, Field, PageHeader } from '~/components/ui'
 import { SERVICE_TYPES, toKobo } from '~/lib/format'
 
 export const Route = createFileRoute('/admin/shipments/new')({
+  beforeLoad: ({ context }) => {
+    if (!context.user.perms.includes('shipments')) throw redirect({ to: '/admin' })
+  },
   loader: () => merchantOptions(),
   component: NewShipment,
 })

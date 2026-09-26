@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { all, first, run, audit } from '~/server/db'
-import { hashPassword, requireUser } from '~/server/auth'
+import { hashPassword, requirePerm, requireUser } from '~/server/auth'
+import { ALL_PERMS } from '~/lib/permissions'
 import type { Role } from '~/lib/types'
 
 export type StaffRow = {
@@ -15,14 +16,15 @@ export type StaffRow = {
   created_at: string
   shipments_handled: number
   can_edit_site: number
+  permissions: string | null
 }
 
 const STAFF_ASSIGNABLE: Role[] = ['admin', 'manager', 'staff', 'rider']
 
 export const listStaff = createServerFn({ method: 'GET' }).handler(async () => {
-  await requireUser(['admin', 'manager'])
+  await requirePerm('staff')
   return all<StaffRow>(
-    `SELECT u.id, u.full_name, u.email, u.phone, u.role, u.branch, u.is_active, u.last_login_at, u.created_at, u.can_edit_site,
+    `SELECT u.id, u.full_name, u.email, u.phone, u.role, u.branch, u.is_active, u.last_login_at, u.created_at, u.can_edit_site, u.permissions,
             (SELECT COUNT(*) FROM shipment_events e WHERE e.staff_id = u.id) AS shipments_handled
        FROM users u WHERE u.role NOT IN ('merchant', 'customer') ORDER BY u.is_active DESC, u.full_name`,
   )
@@ -51,7 +53,7 @@ export const createStaff = createServerFn({ method: 'POST' })
   })
 
 export const updateStaff = createServerFn({ method: 'POST' })
-  .inputValidator((d: { id: number; role?: Role; branch?: string; is_active?: boolean; password?: string; can_edit_site?: boolean }) => d)
+  .inputValidator((d: { id: number; role?: Role; branch?: string; is_active?: boolean; password?: string; can_edit_site?: boolean; permissions?: string[] | null }) => d)
   .handler(async ({ data }) => {
     const me = await requireUser(['admin'])
     const target = await first<{ id: number; role: Role }>('SELECT id, role FROM users WHERE id = ?', Number(data.id))
@@ -64,6 +66,10 @@ export const updateStaff = createServerFn({ method: 'POST' })
     if (data.is_active !== undefined) {
       await run('UPDATE users SET is_active = ? WHERE id = ?', data.is_active ? 1 : 0, target.id)
       if (!data.is_active) await run('DELETE FROM sessions WHERE user_id = ?', target.id)
+    }
+    if (data.permissions !== undefined) {
+      const clean = data.permissions === null ? null : JSON.stringify(ALL_PERMS.filter((p) => data.permissions!.includes(p)))
+      await run('UPDATE users SET permissions = ? WHERE id = ?', clean, target.id)
     }
     if (data.can_edit_site !== undefined) await run('UPDATE users SET can_edit_site = ? WHERE id = ?', data.can_edit_site ? 1 : 0, target.id)
     if (data.password) {

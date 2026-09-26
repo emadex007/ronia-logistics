@@ -32,6 +32,19 @@ async function serveMedia(request: Request, env: Cloudflare.Env, key: string) {
 export default {
   async fetch(request: Request, env: Cloudflare.Env) {
     const url = new URL(request.url)
+    // Browsers ask for /favicon.ico directly — serve the icon uploaded in Admin → Website
+    if (url.pathname === '/favicon.ico') {
+      const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'favicon_key'").first<{ value: string }>()
+      if (row?.value && !/^https?:/i.test(row.value)) {
+        const res = await serveMedia(request, env, row.value)
+        if (res.status !== 404) {
+          const headers = new Headers(res.headers)
+          headers.set('cache-control', 'public, max-age=3600')
+          return new Response(res.body, { status: res.status, headers })
+        }
+      }
+      return Response.redirect(new URL('/favicon.svg', url).toString(), 302)
+    }
     if (url.pathname.startsWith('/media/') && (request.method === 'GET' || request.method === 'HEAD')) {
       return serveMedia(request, env, decodeURIComponent(url.pathname.slice('/media/'.length)))
     }

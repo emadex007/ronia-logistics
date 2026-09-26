@@ -1,6 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 import { all, first, run, audit, todayLagos } from '~/server/db'
-import { requireUser, STAFF_ROLES } from '~/server/auth'
+import { requirePerm, requireUser } from '~/server/auth'
 import type { Transaction } from '~/lib/types'
 
 export type FinanceFilters = { from: string; to: string; type?: 'income' | 'expense'; category?: string; staff?: number }
@@ -11,8 +11,8 @@ type Group = { key: string; income: number; expense: number; count: number }
 export const getFinance = createServerFn({ method: 'GET' })
   .inputValidator((d: FinanceFilters) => d)
   .handler(async ({ data }) => {
-    const me = await requireUser(STAFF_ROLES)
-    const isManager = me.role === 'admin' || me.role === 'manager'
+    const me = await requirePerm('finance', 'record_money')
+    const isManager = me.perms.includes('finance')
 
     const where = ['t.txn_date >= ?', 't.txn_date <= ?']
     const params: unknown[] = [data.from, data.to]
@@ -97,8 +97,8 @@ export type NewTransaction = {
 export const addTransaction = createServerFn({ method: 'POST' })
   .inputValidator((d: NewTransaction) => d)
   .handler(async ({ data }) => {
-    const me = await requireUser(STAFF_ROLES)
-    const isManager = me.role === 'admin' || me.role === 'manager'
+    const me = await requirePerm('finance', 'record_money')
+    const isManager = me.perms.includes('finance')
     if (data.type !== 'income' && data.type !== 'expense') return { ok: false as const, error: 'Choose income or expense.' }
     if (!data.category?.trim()) return { ok: false as const, error: 'Choose a category.' }
     const amount = Math.round(Number(data.amount))

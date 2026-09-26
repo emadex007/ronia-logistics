@@ -2,6 +2,7 @@
 import { getCookie, setCookie, deleteCookie } from '@tanstack/react-start/server'
 import { first, run, nowIso } from './db'
 import type { Role, SessionUser } from '~/lib/types'
+import { effectivePerms, type Perm } from '~/lib/permissions'
 
 const COOKIE = 'ronia_session'
 const SESSION_DAYS = 30
@@ -68,8 +69,8 @@ export async function destroySession() {
 export async function getSessionUser(): Promise<SessionUser | null> {
   const token = getCookie(COOKIE)
   if (!token) return null
-  const row = await first<SessionUser & { expires_at: string }>(
-    `SELECT u.id, u.full_name, u.email, u.role, u.branch, u.merchant_id, u.can_edit_site, s.expires_at
+  const row = await first<Omit<SessionUser, 'perms'> & { expires_at: string }>(
+    `SELECT u.id, u.full_name, u.email, u.role, u.branch, u.merchant_id, u.can_edit_site, u.permissions, s.expires_at
        FROM sessions s JOIN users u ON u.id = s.user_id
       WHERE s.id = ? AND u.is_active = 1`,
     await sha256(token),
@@ -80,7 +81,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     return null
   }
   const { expires_at: _e, ...user } = row
-  return user
+  return { ...user, perms: effectivePerms(user) }
 }
 
 export class AuthError extends Error {}
@@ -94,3 +95,10 @@ export async function requireUser(roles?: Role[]): Promise<SessionUser> {
 }
 
 export const STAFF_ROLES: Role[] = ['admin', 'manager', 'staff', 'rider']
+
+/** Throws unless a logged-in staff member has access to this part of the admin. */
+export async function requirePerm(...anyOf: Perm[]): Promise<SessionUser> {
+  const user = await requireUser(STAFF_ROLES)
+  if (!anyOf.some((p) => user.perms.includes(p))) throw new AuthError('You do not have access to this section. Ask the Administrator.')
+  return user
+}

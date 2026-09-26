@@ -3,12 +3,12 @@ import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
 import { exportSite, getSiteSettings, importSite, saveSiteSettings } from '~/fns/site'
 import { Alert, PageHeader } from '~/components/ui'
 import { ColorField, ListEditor, MediaField, RangeField, Section, TextField } from '~/components/SiteEditorFields'
-import { SOCIALS, type Faq, type Service, type Stat, type Step } from '~/lib/site'
+import { SOCIALS, mediaUrl, type Faq, type Service, type Stat, type Step } from '~/lib/site'
 import type { Settings } from '~/lib/types'
 
 export const Route = createFileRoute('/admin/website')({
   beforeLoad: ({ context }) => {
-    if (context.user.role !== 'admin' && !context.user.can_edit_site) throw redirect({ to: '/admin' })
+    if (!context.user.perms.includes('website')) throw redirect({ to: '/admin' })
   },
   loader: () => getSiteSettings(),
   head: () => ({ meta: [{ title: 'Website editor — Ronia Logistics' }] }),
@@ -24,6 +24,7 @@ const TABS = [
   { id: 'gallery', label: 'Gallery' },
   { id: 'faq', label: 'Steps & FAQ' },
   { id: 'contact', label: 'Contact & social' },
+  { id: 'footer', label: 'Footer' },
   { id: 'receipts', label: 'Receipts' },
 ] as const
 type Tab = (typeof TABS)[number]['id']
@@ -175,7 +176,43 @@ function WebsiteEditor() {
             <Section title="Logo & site icon">
               <div className="grid gap-6 md:grid-cols-[2fr_1fr]">
                 <MediaField label="Logo" value={v('logo_key')} onChange={set('logo_key')} aspect="aspect-[3/1]" hint="PNG with a transparent background works best. Leave empty to use the built-in logo." />
-                <MediaField label="Site icon (favicon)" value={v('favicon_key')} onChange={set('favicon_key')} kind="icon" hint="Square PNG, 512×512. Appears in the browser tab." />
+                <MediaField
+                  label="Site icon (favicon)"
+                  value={v('favicon_key')}
+                  onChange={set('favicon_key')}
+                  kind="icon"
+                  hint="Square PNG, 512×512. Appears in the browser tab. Browsers keep the old icon for a while — press Ctrl+Shift+R or open a private window to see the new one."
+                />
+              </div>
+            </Section>
+            <Section title="Logo & text size">
+              <div className="grid gap-6 md:grid-cols-2">
+                <RangeField label="Logo height" value={v('logo_height')} onChange={set('logo_height')} min={24} max={120} hint="Header and footer. Dashboards use a smaller version." />
+                <RangeField label="Company name text size" value={v('logo_name_size')} onChange={set('logo_name_size')} min={12} max={40} />
+                <label className="flex items-center gap-3 text-sm">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-[var(--color-accent-500)]"
+                    checked={v('logo_show_name') !== '0'}
+                    onChange={(e) => set('logo_show_name')(e.target.checked ? '1' : '0')}
+                  />
+                  Show the company name next to the uploaded logo
+                  <span className="text-xs text-slate-400">(turn off if the name is already in the logo)</span>
+                </label>
+                <RangeField label="Text size for the whole website" value={v('base_font_size')} onChange={set('base_font_size')} min={14} max={20} hint="16px is standard. Everything — headings, buttons, text — grows or shrinks together." />
+              </div>
+              <div className="flex items-center gap-3 rounded-xl p-4" style={{ background: v('header_bg') }}>
+                {v('logo_key') ? (
+                  <img src={mediaUrl(v('logo_key'))} alt="" style={{ height: `${Number(v('logo_height')) || 44}px` }} className="w-auto object-contain" />
+                ) : null}
+                {(!v('logo_key') || v('logo_show_name') !== '0') && (
+                  <span className="font-display font-bold" style={{ color: v('header_text'), fontSize: `${Number(v('logo_name_size')) || 20}px` }}>
+                    {v('company_name')}
+                  </span>
+                )}
+                <span className="ml-auto text-xs opacity-60" style={{ color: v('header_text') }}>
+                  Preview on your header colour
+                </span>
               </div>
             </Section>
             <Section title="Colours" hint="Every button, heading and background on the website, dashboards and receipts follows these two colours.">
@@ -472,6 +509,51 @@ function WebsiteEditor() {
               </div>
             </Section>
           </>
+        )}
+
+        {tab === 'footer' && (
+          <Section title="Footer (bottom of every page)">
+            <div className="grid gap-4 md:grid-cols-3">
+              <ColorField label="Background" value={v('footer_bg')} onChange={set('footer_bg')} />
+              <ColorField label="Text & links" value={v('footer_text')} onChange={set('footer_text')} />
+              <ColorField label="Column headings" value={v('footer_heading')} onChange={set('footer_heading')} />
+            </div>
+            <TextField
+              label="About text under the logo"
+              value={v('footer_about')}
+              onChange={set('footer_about')}
+              multiline
+              rows={3}
+              placeholder={v('tagline')}
+              hint="Leave empty to use the tagline."
+            />
+            <TextField
+              label="Copyright line"
+              value={v('footer_copyright')}
+              onChange={set('footer_copyright')}
+              placeholder="© {year} {company}. All rights reserved."
+              hint="{year} becomes the current year and {company} the company name. Leave empty for the default."
+            />
+            <label className="flex items-center gap-3 text-sm">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-[var(--color-accent-500)]"
+                checked={v('footer_show_logo') !== '0'}
+                onChange={(e) => set('footer_show_logo')(e.target.checked ? '1' : '0')}
+              />
+              Show the logo in the footer
+            </label>
+            <p className="text-xs text-slate-500">Contact details and social links in the footer come from the “Contact & social” tab.</p>
+            <div className="rounded-xl p-5 text-sm" style={{ background: v('footer_bg'), color: v('footer_text') }}>
+              <p className="font-semibold" style={{ color: v('footer_heading') }}>
+                Company
+              </p>
+              <p className="mt-1 opacity-80">{v('footer_about') || v('tagline')}</p>
+              <p className="mt-4 border-t border-current/10 pt-3 text-xs opacity-70">
+                {(v('footer_copyright') || '© {year} {company}. All rights reserved.').replace('{year}', String(new Date().getFullYear())).replace('{company}', v('company_name'))}
+              </p>
+            </div>
+          </Section>
         )}
 
         {tab === 'receipts' && (

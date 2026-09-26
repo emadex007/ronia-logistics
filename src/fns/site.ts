@@ -2,14 +2,12 @@
 import { createServerFn } from '@tanstack/react-start'
 import { env } from 'cloudflare:workers'
 import { all, audit, db } from '~/server/db'
-import { requireUser } from '~/server/auth'
+import { requirePerm } from '~/server/auth'
 import { COLOR_KEYS, EDITABLE_KEYS, HEX, NUMBER_KEYS } from '~/lib/site'
 import type { Settings } from '~/lib/types'
 
 async function requireSiteEditor() {
-  const me = await requireUser(['admin', 'manager', 'staff', 'rider'])
-  if (me.role !== 'admin' && !me.can_edit_site) throw new Error('You do not have permission to edit the website. Ask the administrator.')
-  return me
+  return requirePerm('website')
 }
 
 export const getSiteSettings = createServerFn({ method: 'GET' }).handler(async () => {

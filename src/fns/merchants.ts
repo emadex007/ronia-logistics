@@ -1,10 +1,9 @@
 import { createServerFn } from '@tanstack/react-start'
 import { all, first, run, audit, db, nowIso } from '~/server/db'
-import { hashPassword, requireUser, STAFF_ROLES } from '~/server/auth'
+import { hashPassword, requirePerm } from '~/server/auth'
 import { getBalance, getMerchantProducts, getMovements, getPayouts, getTotals } from '~/server/stock'
 import type { Merchant, MovementType, Product, Shipment } from '~/lib/types'
 
-const MANAGERS = ['admin', 'manager'] as const
 
 export type MerchantRow = Merchant & {
   product_count: number
@@ -17,7 +16,7 @@ export type MerchantRow = Merchant & {
 export const listMerchants = createServerFn({ method: 'GET' })
   .inputValidator((d: { q?: string }) => d)
   .handler(async ({ data }) => {
-    await requireUser(STAFF_ROLES)
+    await requirePerm('merchants')
     const q = data.q?.trim() ? `%${data.q.trim()}%` : null
     return all<MerchantRow>(
       `SELECT m.*,
@@ -35,14 +34,14 @@ export const listMerchants = createServerFn({ method: 'GET' })
 
 /** Small list for dropdowns (e.g. New shipment). */
 export const merchantOptions = createServerFn({ method: 'GET' }).handler(async () => {
-  await requireUser(STAFF_ROLES)
+  await requirePerm('merchants')
   return all<{ id: number; business_name: string }>('SELECT id, business_name FROM merchants WHERE is_active = 1 ORDER BY business_name')
 })
 
 export const getMerchant = createServerFn({ method: 'GET' })
   .inputValidator((d: { id: number }) => d)
   .handler(async ({ data }) => {
-    const me = await requireUser(STAFF_ROLES)
+    const me = await requirePerm('merchants')
     const id = Number(data.id)
     const merchant = await first<Merchant>('SELECT * FROM merchants WHERE id = ?', id)
     if (!merchant) return null
@@ -62,7 +61,7 @@ export const getMerchant = createServerFn({ method: 'GET' })
       getPayouts(id),
       getBalance(id),
     ])
-    const canSeeBank = me.role === 'admin' || me.role === 'manager'
+    const canSeeBank = me.perms.includes('finance')
     return {
       merchant: canSeeBank ? merchant : { ...merchant, account_number: null, bank_name: null, account_name: null },
       products,
@@ -80,7 +79,7 @@ type MerchantInput = Partial<Omit<Merchant, 'id' | 'created_at' | 'is_active'>> 
 export const saveMerchant = createServerFn({ method: 'POST' })
   .inputValidator((d: MerchantInput & { id?: number; is_active?: boolean }) => d)
   .handler(async ({ data }) => {
-    const me = await requireUser([...MANAGERS])
+    const me = await requirePerm('merchants')
     if (!data.business_name?.trim()) return { ok: false as const, error: 'Business name is required.' }
     const v = (x?: string | null) => (x ?? '').toString().trim() || null
     const fields = [
@@ -122,7 +121,7 @@ export const saveMerchant = createServerFn({ method: 'POST' })
 export const createMerchantLogin = createServerFn({ method: 'POST' })
   .inputValidator((d: { merchant_id: number; full_name: string; email: string; password: string }) => d)
   .handler(async ({ data }) => {
-    const me = await requireUser([...MANAGERS])
+    const me = await requirePerm('merchants')
     const merchant = await first<Merchant>('SELECT * FROM merchants WHERE id = ?', Number(data.merchant_id))
     if (!merchant) return { ok: false as const, error: 'Merchant not found.' }
     if (!data.email?.trim()) return { ok: false as const, error: 'Email is required.' }
@@ -144,7 +143,7 @@ export const createMerchantLogin = createServerFn({ method: 'POST' })
 export const setMerchantLogin = createServerFn({ method: 'POST' })
   .inputValidator((d: { user_id: number; is_active?: boolean; password?: string }) => d)
   .handler(async ({ data }) => {
-    const me = await requireUser([...MANAGERS])
+    const me = await requirePerm('merchants')
     const u = await first<{ id: number }>("SELECT id FROM users WHERE id = ? AND role = 'merchant'", Number(data.user_id))
     if (!u) return { ok: false as const, error: 'Login not found.' }
     if (data.password !== undefined) {
@@ -175,7 +174,7 @@ type ProductInput = {
 export const saveProduct = createServerFn({ method: 'POST' })
   .inputValidator((d: ProductInput) => d)
   .handler(async ({ data }) => {
-    const me = await requireUser(STAFF_ROLES)
+    const me = await requirePerm('merchants')
     if (!data.name?.trim()) return { ok: false as const, error: 'Product name is required.' }
     const common = [
       data.name.trim(),
@@ -261,7 +260,7 @@ export const recordStockMovement = createServerFn({ method: 'POST' })
     (d: { product_id: number; merchant_id: number; type: MovementType; quantity: number; unit_price?: number; reference?: string; note?: string; tracking_code?: string }) => d,
   )
   .handler(async ({ data }) => {
-    const me = await requireUser(STAFF_ROLES)
+    const me = await requirePerm('merchants')
     const qty = Math.trunc(Number(data.quantity))
     if (!qty || (data.type !== 'adjustment' && qty < 0)) return { ok: false as const, error: 'Enter a valid quantity.' }
     let shipmentId: number | null = null
@@ -290,7 +289,7 @@ export const recordStockMovement = createServerFn({ method: 'POST' })
 export const recordPayout = createServerFn({ method: 'POST' })
   .inputValidator((d: { merchant_id: number; amount: number; method: string; reference?: string; note?: string; paid_on?: string }) => d)
   .handler(async ({ data }) => {
-    const me = await requireUser([...MANAGERS])
+    const me = await requirePerm('finance')
     const merchantId = Number(data.merchant_id)
     const amount = Math.round(Number(data.amount))
     if (!amount || amount <= 0) return { ok: false as const, error: 'Enter an amount greater than zero.' }
