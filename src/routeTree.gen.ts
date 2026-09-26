@@ -10,16 +10,20 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MerchantRouteRouteImport } from './routes/merchant/route'
 import { Route as ReportRouteImport } from './routes/report'
+import { Route as ServicesRouteImport } from './routes/services'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as TrackRouteImport } from './routes/track'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminFinanceRouteImport } from './routes/admin/finance'
 import { Route as AdminStaffRouteImport } from './routes/admin/staff'
+import { Route as AdminWebsiteRouteImport } from './routes/admin/website'
 import { Route as MerchantIndexRouteImport } from './routes/merchant/index'
 import { Route as MerchantDeliveriesRouteImport } from './routes/merchant/deliveries'
 import { Route as MerchantHistoryRouteImport } from './routes/merchant/history'
@@ -39,6 +43,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountRoute = AccountRouteImport.update({
   id: '/account',
   path: '/account',
@@ -47,6 +56,11 @@ const AccountRoute = AccountRouteImport.update({
 const AdminRouteRoute = AdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -62,6 +76,11 @@ const MerchantRouteRoute = MerchantRouteRouteImport.update({
 const ReportRoute = ReportRouteImport.update({
   id: '/report',
   path: '/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServicesRoute = ServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SetupRoute = SetupRouteImport.update({
@@ -87,6 +106,11 @@ const AdminFinanceRoute = AdminFinanceRouteImport.update({
 const AdminStaffRoute = AdminStaffRouteImport.update({
   id: '/staff',
   path: '/staff',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminWebsiteRoute = AdminWebsiteRouteImport.update({
+  id: '/website',
+  path: '/website',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const MerchantIndexRoute = MerchantIndexRouteImport.update({
@@ -159,13 +183,17 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/merchant': typeof MerchantRouteRouteWithChildren
+  '/about': typeof AboutRoute
   '/account': typeof AccountRoute
+  '/contact': typeof ContactRoute
   '/login': typeof LoginRoute
   '/report': typeof ReportRoute
+  '/services': typeof ServicesRoute
   '/setup': typeof SetupRoute
   '/track': typeof TrackRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/staff': typeof AdminStaffRoute
+  '/admin/website': typeof AdminWebsiteRoute
   '/merchant/deliveries': typeof MerchantDeliveriesRoute
   '/merchant/history': typeof MerchantHistoryRoute
   '/merchant/login': typeof MerchantLoginRoute
@@ -183,13 +211,17 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/account': typeof AccountRoute
+  '/contact': typeof ContactRoute
   '/login': typeof LoginRoute
   '/report': typeof ReportRoute
+  '/services': typeof ServicesRoute
   '/setup': typeof SetupRoute
   '/track': typeof TrackRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/staff': typeof AdminStaffRoute
+  '/admin/website': typeof AdminWebsiteRoute
   '/merchant/deliveries': typeof MerchantDeliveriesRoute
   '/merchant/history': typeof MerchantHistoryRoute
   '/merchant/login': typeof MerchantLoginRoute
@@ -210,13 +242,17 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/merchant': typeof MerchantRouteRouteWithChildren
+  '/about': typeof AboutRoute
   '/account': typeof AccountRoute
+  '/contact': typeof ContactRoute
   '/login': typeof LoginRoute
   '/report': typeof ReportRoute
+  '/services': typeof ServicesRoute
   '/setup': typeof SetupRoute
   '/track': typeof TrackRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/staff': typeof AdminStaffRoute
+  '/admin/website': typeof AdminWebsiteRoute
   '/merchant/deliveries': typeof MerchantDeliveriesRoute
   '/merchant/history': typeof MerchantHistoryRoute
   '/merchant_/login': typeof MerchantLoginRoute
@@ -238,13 +274,17 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/merchant'
+    | '/about'
     | '/account'
+    | '/contact'
     | '/login'
     | '/report'
+    | '/services'
     | '/setup'
     | '/track'
     | '/admin/finance'
     | '/admin/staff'
+    | '/admin/website'
     | '/merchant/deliveries'
     | '/merchant/history'
     | '/merchant/login'
@@ -262,13 +302,17 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/account'
+    | '/contact'
     | '/login'
     | '/report'
+    | '/services'
     | '/setup'
     | '/track'
     | '/admin/finance'
     | '/admin/staff'
+    | '/admin/website'
     | '/merchant/deliveries'
     | '/merchant/history'
     | '/merchant/login'
@@ -288,13 +332,17 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/merchant'
+    | '/about'
     | '/account'
+    | '/contact'
     | '/login'
     | '/report'
+    | '/services'
     | '/setup'
     | '/track'
     | '/admin/finance'
     | '/admin/staff'
+    | '/admin/website'
     | '/merchant/deliveries'
     | '/merchant/history'
     | '/merchant_/login'
@@ -315,9 +363,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   MerchantRouteRoute: typeof MerchantRouteRouteWithChildren
+  AboutRoute: typeof AboutRoute
   AccountRoute: typeof AccountRoute
+  ContactRoute: typeof ContactRoute
   LoginRoute: typeof LoginRoute
   ReportRoute: typeof ReportRoute
+  ServicesRoute: typeof ServicesRoute
   SetupRoute: typeof SetupRoute
   TrackRoute: typeof TrackRoute
   MerchantLoginRoute: typeof MerchantLoginRoute
@@ -336,6 +387,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/account': {
       id: '/account'
       path: '/account'
@@ -348,6 +406,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -369,6 +434,13 @@ declare module '@tanstack/react-router' {
       path: '/report'
       fullPath: '/report'
       preLoaderRoute: typeof ReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/services': {
+      id: '/services'
+      path: '/services'
+      fullPath: '/services'
+      preLoaderRoute: typeof ServicesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/setup': {
@@ -404,6 +476,13 @@ declare module '@tanstack/react-router' {
       path: '/staff'
       fullPath: '/admin/staff'
       preLoaderRoute: typeof AdminStaffRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/website': {
+      id: '/admin/website'
+      path: '/website'
+      fullPath: '/admin/website'
+      preLoaderRoute: typeof AdminWebsiteRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/merchant/': {
@@ -503,6 +582,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteRouteChildren {
   AdminFinanceRoute: typeof AdminFinanceRoute
   AdminStaffRoute: typeof AdminStaffRoute
+  AdminWebsiteRoute: typeof AdminWebsiteRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminMerchantsIdRoute: typeof AdminMerchantsIdRoute
   AdminShipmentsIdRoute: typeof AdminShipmentsIdRoute
@@ -514,6 +594,7 @@ interface AdminRouteRouteChildren {
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminFinanceRoute: AdminFinanceRoute,
   AdminStaffRoute: AdminStaffRoute,
+  AdminWebsiteRoute: AdminWebsiteRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminMerchantsIdRoute: AdminMerchantsIdRoute,
   AdminShipmentsIdRoute: AdminShipmentsIdRoute,
@@ -546,9 +627,12 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRouteRoute: AdminRouteRouteWithChildren,
   MerchantRouteRoute: MerchantRouteRouteWithChildren,
+  AboutRoute: AboutRoute,
   AccountRoute: AccountRoute,
+  ContactRoute: ContactRoute,
   LoginRoute: LoginRoute,
   ReportRoute: ReportRoute,
+  ServicesRoute: ServicesRoute,
   SetupRoute: SetupRoute,
   TrackRoute: TrackRoute,
   MerchantLoginRoute: MerchantLoginRoute,

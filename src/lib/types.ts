@@ -7,6 +7,7 @@ export type SessionUser = {
   role: Role
   branch: string | null
   merchant_id: number | null
+  can_edit_site?: number
 }
 
 export type ShipmentStatus =

@@ -104,13 +104,14 @@ function StaffPage() {
       )}
 
       <div className="card overflow-x-auto">
-        <table className="w-full min-w-[820px] text-left text-sm">
+        <table className="w-full min-w-[920px] text-left text-sm">
           <thead className="border-b border-slate-200 bg-slate-50 text-xs tracking-wide text-slate-500 uppercase">
             <tr>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Role</th>
               <th className="px-4 py-3">Branch</th>
               <th className="px-4 py-3">Updates made</th>
+              <th className="px-4 py-3" title="Can change the website's pictures, text, logo and colours">Website editor</th>
               <th className="px-4 py-3">Last login</th>
               <th className="px-4 py-3">Status</th>
               {isAdmin && <th className="px-4 py-3 text-right">Actions</th>}
@@ -146,6 +147,29 @@ function StaffPage() {
                 </td>
                 <td className="px-4 py-3">{s.branch ?? '—'}</td>
                 <td className="px-4 py-3">{s.shipments_handled}</td>
+                <td className="px-4 py-3">
+                  {s.role === 'admin' ? (
+                    <span className="text-xs text-slate-500">Always</span>
+                  ) : isAdmin ? (
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-xs">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-[var(--color-accent-500)]"
+                        checked={!!s.can_edit_site}
+                        disabled={busy}
+                        onChange={(e) =>
+                          act(
+                            () => updateStaff({ data: { id: s.id, can_edit_site: e.target.checked } }),
+                            e.target.checked ? `${s.full_name} can now edit the website.` : `${s.full_name} can no longer edit the website.`,
+                          )
+                        }
+                      />
+                      {s.can_edit_site ? 'Yes' : 'No'}
+                    </label>
+                  ) : (
+                    <span className="text-xs">{s.can_edit_site ? 'Yes' : 'No'}</span>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-xs text-slate-500">{dateTime(s.last_login_at)}</td>
                 <td className="px-4 py-3">
                   <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${s.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}`}>

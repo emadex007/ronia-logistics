@@ -2,24 +2,35 @@
 import type { ReactNode } from 'react'
 import { HeadContent, Link, Scripts, createRootRoute } from '@tanstack/react-router'
 import appCss from '~/styles.css?url'
+import { getSiteContent } from '~/fns/public'
+import { brandCss, mediaUrl } from '~/lib/site'
 
 export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'Ronia Logistics — Track your package' },
-      { name: 'description', content: 'Ronia Logistics, Abuja: same-day, interstate and international deliveries with live package tracking.' },
-      { name: 'theme-color', content: '#0b2545' },
-    ],
-    links: [
-      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-      { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
-      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap' },
-      { rel: 'stylesheet', href: appCss },
-      { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
-    ],
-  }),
+  loader: () => getSiteContent(),
+  head: ({ loaderData }) => {
+    const st = loaderData?.settings ?? {}
+    const name = st.company_name || 'Ronia Logistics'
+    return {
+      meta: [
+        { charSet: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { title: `${name} — Track your package` },
+        { name: 'description', content: st.seo_description || 'Same-day, interstate and international deliveries with live package tracking.' },
+        { name: 'theme-color', content: st.primary_color || '#0b2545' },
+        { property: 'og:title', content: name },
+        { property: 'og:description', content: st.seo_description || st.tagline || '' },
+        ...(st.hero_image ? [{ property: 'og:image', content: mediaUrl(st.hero_image) }] : []),
+      ],
+      links: [
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
+        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap' },
+        { rel: 'stylesheet', href: appCss },
+        st.favicon_key ? { rel: 'icon', href: mediaUrl(st.favicon_key) } : { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
+      ],
+      styles: [{ children: brandCss(st) }],
+    }
+  },
   shellComponent: RootDocument,
   notFoundComponent: () => (
     <div className="mx-auto max-w-xl px-6 py-24 text-center">

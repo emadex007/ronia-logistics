@@ -14,6 +14,7 @@ export type StaffRow = {
   last_login_at: string | null
   created_at: string
   shipments_handled: number
+  can_edit_site: number
 }
 
 const STAFF_ASSIGNABLE: Role[] = ['admin', 'manager', 'staff', 'rider']
@@ -21,9 +22,9 @@ const STAFF_ASSIGNABLE: Role[] = ['admin', 'manager', 'staff', 'rider']
 export const listStaff = createServerFn({ method: 'GET' }).handler(async () => {
   await requireUser(['admin', 'manager'])
   return all<StaffRow>(
-    `SELECT u.id, u.full_name, u.email, u.phone, u.role, u.branch, u.is_active, u.last_login_at, u.created_at,
+    `SELECT u.id, u.full_name, u.email, u.phone, u.role, u.branch, u.is_active, u.last_login_at, u.created_at, u.can_edit_site,
             (SELECT COUNT(*) FROM shipment_events e WHERE e.staff_id = u.id) AS shipments_handled
-       FROM users u WHERE u.role != 'merchant' ORDER BY u.is_active DESC, u.full_name`,
+       FROM users u WHERE u.role NOT IN ('merchant', 'customer') ORDER BY u.is_active DESC, u.full_name`,
   )
 })
 
@@ -50,11 +51,11 @@ export const createStaff = createServerFn({ method: 'POST' })
   })
 
 export const updateStaff = createServerFn({ method: 'POST' })
-  .inputValidator((d: { id: number; role?: Role; branch?: string; is_active?: boolean; password?: string }) => d)
+  .inputValidator((d: { id: number; role?: Role; branch?: string; is_active?: boolean; password?: string; can_edit_site?: boolean }) => d)
   .handler(async ({ data }) => {
     const me = await requireUser(['admin'])
     const target = await first<{ id: number; role: Role }>('SELECT id, role FROM users WHERE id = ?', Number(data.id))
-    if (!target || target.role === 'merchant') return { ok: false as const, error: 'Staff member not found.' }
+    if (!target || target.role === 'merchant' || target.role === 'customer') return { ok: false as const, error: 'Staff member not found.' }
     if (target.id === me.id && (data.is_active === false || (data.role && data.role !== 'admin'))) {
       return { ok: false as const, error: "You can't disable or demote your own account." }
     }
@@ -64,6 +65,7 @@ export const updateStaff = createServerFn({ method: 'POST' })
       await run('UPDATE users SET is_active = ? WHERE id = ?', data.is_active ? 1 : 0, target.id)
       if (!data.is_active) await run('DELETE FROM sessions WHERE user_id = ?', target.id)
     }
+    if (data.can_edit_site !== undefined) await run('UPDATE users SET can_edit_site = ? WHERE id = ?', data.can_edit_site ? 1 : 0, target.id)
     if (data.password) {
       if (data.password.length < 8) return { ok: false as const, error: 'Password must be at least 8 characters.' }
       await run('UPDATE users SET password_hash = ? WHERE id = ?', await hashPassword(data.password), target.id)

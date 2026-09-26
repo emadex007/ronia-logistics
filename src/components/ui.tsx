@@ -1,13 +1,20 @@
 import type { ReactNode } from 'react'
 import { statusLabel, statusTone } from '~/lib/format'
 
-export function Logo({ name = 'Ronia Logistics', light = false }: { name?: string; light?: boolean }) {
+export function Logo({ name = 'Ronia Logistics', light = false, src }: { name?: string; light?: boolean; src?: string }) {
+  if (src) {
+    return (
+      <span className="inline-flex items-center gap-2.5">
+        <img src={src} alt={name} className={`h-10 w-auto max-w-[180px] object-contain ${light ? 'rounded bg-white/95 px-1.5 py-1' : ''}`} />
+      </span>
+    )
+  }
   return (
     <span className="inline-flex items-center gap-2.5">
       <svg viewBox="0 0 64 64" className="h-9 w-9 shrink-0" aria-hidden>
-        <rect width="64" height="64" rx="14" fill={light ? '#ffffff' : '#0b2545'} />
-        <path d="M16 22l16-8 16 8v20l-16 8-16-8z" fill="none" stroke="#f97316" strokeWidth="4" strokeLinejoin="round" />
-        <path d="M16 22l16 8 16-8M32 30v20" fill="none" stroke={light ? '#0b2545' : '#fff'} strokeWidth="4" strokeLinejoin="round" />
+        <rect width="64" height="64" rx="14" className={light ? 'fill-white' : 'fill-brand-900'} />
+        <path d="M16 22l16-8 16 8v20l-16 8-16-8z" fill="none" className="stroke-accent-500" strokeWidth="4" strokeLinejoin="round" />
+        <path d="M16 22l16 8 16-8M32 30v20" fill="none" className={light ? 'stroke-brand-900' : 'stroke-white'} strokeWidth="4" strokeLinejoin="round" />
       </svg>
       <span className={`font-display text-lg font-bold tracking-tight ${light ? 'text-white' : 'text-brand-900'}`}>{name}</span>
     </span>

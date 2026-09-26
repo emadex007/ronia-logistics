@@ -69,7 +69,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   const token = getCookie(COOKIE)
   if (!token) return null
   const row = await first<SessionUser & { expires_at: string }>(
-    `SELECT u.id, u.full_name, u.email, u.role, u.branch, u.merchant_id, s.expires_at
+    `SELECT u.id, u.full_name, u.email, u.role, u.branch, u.merchant_id, u.can_edit_site, s.expires_at
        FROM sessions s JOIN users u ON u.id = s.user_id
       WHERE s.id = ? AND u.is_active = 1`,
     await sha256(token),

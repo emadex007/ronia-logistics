@@ -59,6 +59,14 @@ git push -u origin main
 - `migrations/`: D1 schema
 - Money is stored in **kobo** (₦1 = 100)
 
+## Website editor
+
+Admin → **Website** lets you change the logo, site icon, colours, home-page banner (picture **or** video), services with photos,
+About text and photo, merchant banner, gallery, steps, FAQ, contact details, map, social links and receipt text.
+Uploads go to the R2 bucket and are served from `/media/…`. The default photos are free Unsplash images; replace them with Ronia's own.
+
+Only the **Administrator** and staff ticked as **Website editor** on the Staff page can open it.
+
 ## Login pages
 
 | Who | Page | Notes |
