@@ -203,3 +203,37 @@ export function ListEditor<T>({
     </div>
   )
 }
+
+export function RangeField({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+  step = 1,
+  unit = 'px',
+  hint,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  min: number
+  max: number
+  step?: number
+  unit?: string
+  hint?: string
+}) {
+  return (
+    <label className="block">
+      <span className="label flex justify-between">
+        {label}
+        <span className="font-mono text-brand-900 normal-case">
+          {value || '—'}
+          {value ? unit : ''}
+        </span>
+      </span>
+      <input type="range" min={min} max={max} step={step} value={Number(value) || min} onChange={(e) => onChange(e.target.value)} className="w-full accent-[var(--color-accent-500)]" />
+      {hint && <span className="block text-xs text-slate-400">{hint}</span>}
+    </label>
+  )
+}

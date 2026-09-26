@@ -28,7 +28,23 @@ export function brandCss(s: Settings) {
   const p = HEX.test(s.primary_color ?? '') ? s.primary_color : '#0b2545'
   const a = HEX.test(s.accent_color ?? '') ? s.accent_color : '#f97316'
   const mix = (c: string, other: string, pct: number) => `color-mix(in oklab, ${c}, ${other} ${pct}%)`
+  const hex = (k: string, d: string) => (HEX.test(s[k] ?? '') ? s[k] : d)
+  const num = (k: string, d: number, min: number, max: number) => {
+    const n = Number(s[k])
+    return Number.isFinite(n) && s[k] !== '' ? Math.min(max, Math.max(min, n)) : d
+  }
   return `:root{
+  --container-6xl:${num('site_width', 1200, 960, 1600)}px;
+  --header-bg:${hex('header_bg', '#000000')};
+  --header-text:${hex('header_text', '#ffffff')};
+  --header-h:${num('header_height', 76, 56, 120)}px;
+  --btn-radius:${num('btn_radius', 10, 0, 30)}px;
+  --btn-p-bg:${hex('btn_primary_bg', p)};
+  --btn-p-text:${hex('btn_primary_text', '#ffffff')};
+  --btn-p-hover:${hex('btn_primary_hover', mix(p, 'white', 12))};
+  --btn-a-bg:${hex('btn_accent_bg', a)};
+  --btn-a-text:${hex('btn_accent_text', '#ffffff')};
+  --btn-a-hover:${hex('btn_accent_hover', mix(a, 'black', 12))};
   --color-brand-950:${mix(p, 'black', 35)};
   --color-brand-900:${p};
   --color-brand-800:${mix(p, 'white', 10)};
@@ -51,6 +67,22 @@ export const SOCIALS = [
   { key: 'linkedin', label: 'LinkedIn' },
 ] as const
 
+/** Is a #rrggbb colour dark? (decides light/dark logo and text on the header) */
+export function isDark(hex: string | undefined) {
+  if (!hex || !HEX.test(hex)) return true
+  const n = parseInt(hex.slice(1), 16)
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+  return 0.299 * r + 0.587 * g + 0.114 * b < 150
+}
+
+export const COLOR_KEYS = ['primary_color', 'accent_color', 'header_bg', 'header_text', 'btn_primary_bg', 'btn_primary_text', 'btn_primary_hover', 'btn_accent_bg', 'btn_accent_text', 'btn_accent_hover']
+export const NUMBER_KEYS: Record<string, [number, number]> = {
+  site_width: [960, 1600],
+  header_height: [56, 120],
+  hero_height: [0, 100],
+  btn_radius: [0, 30],
+}
+
 /** Every key the Website editor is allowed to change. */
 export const EDITABLE_KEYS = [
   'company_name', 'tagline', 'seo_description', 'logo_key', 'favicon_key', 'primary_color', 'accent_color',
@@ -62,4 +94,6 @@ export const EDITABLE_KEYS = [
   'phone', 'whatsapp', 'email', 'address', 'office_hours', 'map_query',
   'facebook', 'instagram', 'x_twitter', 'tiktok', 'linkedin',
   'receipt_footer', 'tracking_prefix',
+  'header_bg', 'header_text', 'header_height', 'site_width', 'hero_height',
+  'btn_primary_bg', 'btn_primary_text', 'btn_primary_hover', 'btn_accent_bg', 'btn_accent_text', 'btn_accent_hover', 'btn_radius',
 ] as const

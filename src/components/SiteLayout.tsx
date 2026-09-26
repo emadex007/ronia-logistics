@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Logo } from './ui'
-import { mediaUrl, SOCIALS } from '~/lib/site'
+import { isDark, mediaUrl, SOCIALS } from '~/lib/site'
 import type { Settings } from '~/lib/types'
 
 const NAV = [
@@ -16,13 +16,16 @@ export function SiteLayout({ settings, children }: { settings: Settings; childre
   const wa = (settings.whatsapp || '').replace(/[^0-9]/g, '')
   const logo = mediaUrl(settings.logo_key)
   const socials = SOCIALS.filter((s) => settings[s.key])
+  const dark = isDark(settings.header_bg || '#000000')
+  const hover = dark ? 'hover:bg-white/10' : 'hover:bg-black/5'
+  const line = dark ? 'border-white/10' : 'border-black/10'
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+      <header className={`sticky top-0 z-30 border-b shadow-sm ${line}`} style={{ background: 'var(--header-bg, #000)', color: 'var(--header-text, #fff)' }}>
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2 sm:px-6" style={{ minHeight: 'var(--header-h, 76px)' }}>
           <Link to="/" onClick={() => setOpen(false)}>
-            <Logo name={settings.company_name} src={logo || undefined} />
+            <Logo name={settings.company_name} src={logo || undefined} light={dark} />
           </Link>
 
           <nav className="hidden items-center gap-1 text-sm font-medium lg:flex">
@@ -31,20 +34,20 @@ export function SiteLayout({ settings, children }: { settings: Settings; childre
                 key={n.to}
                 to={n.to}
                 activeOptions={{ exact: 'exact' in n }}
-                className="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                activeProps={{ className: '!text-brand-900 font-semibold' }}
+                className={`rounded-lg px-3 py-2 opacity-80 transition hover:opacity-100 ${hover}`}
+                activeProps={{ className: '!opacity-100 font-semibold' }}
               >
                 {n.label}
               </Link>
             ))}
-            <Link to="/track" search={{ code: '' }} className="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
+            <Link to="/track" search={{ code: '' }} className={`rounded-lg px-3 py-2 opacity-80 transition hover:opacity-100 ${hover}`}>
               Track
             </Link>
-            <span className="mx-2 h-5 w-px bg-slate-200" />
-            <Link to="/login" className="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
+            <span className="mx-2 h-5 w-px bg-current opacity-20" />
+            <Link to="/login" className={`rounded-lg px-3 py-2 opacity-80 transition hover:opacity-100 ${hover}`}>
               Customer login
             </Link>
-            <Link to="/merchant/login" className="btn-primary !px-3 !py-1.5">
+            <Link to="/merchant/login" className="btn-accent !px-4 !py-2">
               Merchant login
             </Link>
           </nav>
@@ -55,7 +58,7 @@ export function SiteLayout({ settings, children }: { settings: Settings; childre
             </Link>
             <button
               aria-label="Menu"
-              className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-700"
+              className={`grid h-9 w-9 place-items-center rounded-lg border ${line}`}
               onClick={() => setOpen((v) => !v)}
             >
               {open ? '✕' : '☰'}
@@ -64,9 +67,9 @@ export function SiteLayout({ settings, children }: { settings: Settings; childre
         </div>
 
         {open && (
-          <nav className="border-t border-slate-100 bg-white px-4 pb-4 lg:hidden">
+          <nav className={`border-t px-4 pb-4 lg:hidden ${line}`}>
             {NAV.map((n) => (
-              <Link key={n.to} to={n.to} onClick={() => setOpen(false)} className="block border-b border-slate-100 py-3 font-medium text-slate-700">
+              <Link key={n.to} to={n.to} onClick={() => setOpen(false)} className={`block border-b py-3 font-medium ${line}`}>
                 {n.label}
               </Link>
             ))}

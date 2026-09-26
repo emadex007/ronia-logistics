@@ -32,15 +32,27 @@ body {
 @utility label {
   @apply mb-1 block text-xs font-semibold tracking-wide text-slate-600 uppercase;
 }
+/* Button colours, hover colours and roundness come from Admin → Website → Layout & buttons */
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition
+  @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold transition
     disabled:cursor-not-allowed disabled:opacity-60;
+  border-radius: var(--btn-radius, 0.5rem);
 }
 @utility btn-primary {
-  @apply btn bg-brand-900 text-white hover:bg-brand-800;
+  @apply btn;
+  background-color: var(--btn-p-bg, var(--color-brand-900));
+  color: var(--btn-p-text, #fff);
+  &:hover:not(:disabled) {
+    background-color: var(--btn-p-hover, var(--color-brand-800));
+  }
 }
 @utility btn-accent {
-  @apply btn bg-accent-500 text-white hover:bg-accent-600;
+  @apply btn;
+  background-color: var(--btn-a-bg, var(--color-accent-500));
+  color: var(--btn-a-text, #fff);
+  &:hover:not(:disabled) {
+    background-color: var(--btn-a-hover, var(--color-accent-600));
+  }
 }
 @utility btn-ghost {
   @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-100;

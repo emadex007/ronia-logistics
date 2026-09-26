@@ -3,7 +3,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { env } from 'cloudflare:workers'
 import { all, audit, db } from '~/server/db'
 import { requireUser } from '~/server/auth'
-import { EDITABLE_KEYS, HEX } from '~/lib/site'
+import { COLOR_KEYS, EDITABLE_KEYS, HEX, NUMBER_KEYS } from '~/lib/site'
 import type { Settings } from '~/lib/types'
 
 async function requireSiteEditor() {
@@ -25,7 +25,12 @@ export const saveSiteSettings = createServerFn({ method: 'POST' })
     const allowed = new Set<string>(EDITABLE_KEYS)
     const entries = (Object.entries(data.values ?? {}) as [string, unknown][]).filter((e): e is [string, string] => allowed.has(e[0]) && typeof e[1] === 'string')
     for (const [k, v] of entries) {
-      if ((k === 'primary_color' || k === 'accent_color') && !HEX.test(v)) return { ok: false as const, error: 'Colours must look like #0b2545.' }
+      if (COLOR_KEYS.includes(k) && !HEX.test(v)) return { ok: false as const, error: 'Colours must look like #0b2545.' }
+      if (k in NUMBER_KEYS) {
+        const [min, max] = NUMBER_KEYS[k]
+        const n = Number(v)
+        if (!Number.isFinite(n) || n < min || n > max) return { ok: false as const, error: `${k.replace(/_/g, ' ')} must be between ${min} and ${max}.` }
+      }
       if (k.endsWith('_json')) {
         try {
           JSON.parse(v)

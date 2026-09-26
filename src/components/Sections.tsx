@@ -30,8 +30,9 @@ export function TrackBox({ compact = false }: { compact?: boolean }) {
 export function Hero({ s }: { s: Settings }) {
   const video = s.hero_media_type === 'video' ? mediaUrl(s.hero_video) : ''
   const image = mediaUrl(s.hero_image)
+  const h = Number(s.hero_height)
   return (
-    <section className="relative isolate overflow-hidden bg-brand-950 text-white">
+    <section className="relative isolate flex items-center overflow-hidden bg-brand-950 text-white" style={h > 0 ? { minHeight: `calc(${h}vh - var(--header-h, 76px))` } : undefined}>
       {video ? (
         <video className="absolute inset-0 -z-20 h-full w-full object-cover" src={video} poster={image || undefined} autoPlay muted loop playsInline />
       ) : image ? (
@@ -40,7 +41,7 @@ export function Hero({ s }: { s: Settings }) {
       <div className="absolute inset-0 -z-10 bg-gradient-to-r from-brand-950/95 via-brand-950/80 to-brand-950/30" />
       <div className="absolute inset-x-0 bottom-0 -z-10 h-32 bg-gradient-to-t from-brand-950/60 to-transparent" />
 
-      <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 pt-16 pb-28 sm:px-6 md:grid-cols-[1.2fr_1fr] md:pt-24 md:pb-36">
+      <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-4 pt-16 pb-28 sm:px-6 md:grid-cols-[1.2fr_1fr] md:pt-24 md:pb-36">
         <div>
           {s.hero_badge && (
             <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide text-orange-100 uppercase backdrop-blur">

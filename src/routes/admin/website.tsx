@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
 import { getSiteSettings, saveSiteSettings } from '~/fns/site'
 import { Alert, PageHeader } from '~/components/ui'
-import { ColorField, ListEditor, MediaField, Section, TextField } from '~/components/SiteEditorFields'
+import { ColorField, ListEditor, MediaField, RangeField, Section, TextField } from '~/components/SiteEditorFields'
 import { SOCIALS, type Faq, type Service, type Stat, type Step } from '~/lib/site'
 import type { Settings } from '~/lib/types'
 
@@ -17,6 +17,7 @@ export const Route = createFileRoute('/admin/website')({
 
 const TABS = [
   { id: 'brand', label: 'Brand & colours' },
+  { id: 'layout', label: 'Layout & buttons' },
   { id: 'hero', label: 'Home: top banner' },
   { id: 'services', label: 'Services' },
   { id: 'about', label: 'About & merchants' },
@@ -123,6 +124,93 @@ function WebsiteEditor() {
                 <span className="rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: v('accent_color') }}>
                   Track now →
                 </span>
+              </div>
+            </Section>
+          </>
+        )}
+
+        {tab === 'layout' && (
+          <>
+            <Section title="Header (top menu bar)">
+              <div className="grid gap-4 md:grid-cols-3">
+                <ColorField label="Background" value={v('header_bg')} onChange={set('header_bg')} />
+                <ColorField label="Text & links" value={v('header_text')} onChange={set('header_text')} />
+                <RangeField label="Height" value={v('header_height')} onChange={set('header_height')} min={56} max={120} />
+              </div>
+              <div
+                className="flex items-center justify-between rounded-xl px-5 text-sm"
+                style={{ background: v('header_bg'), color: v('header_text'), minHeight: `${Number(v('header_height')) || 76}px` }}
+              >
+                <span className="font-display font-bold">{v('company_name')}</span>
+                <span className="flex items-center gap-4 opacity-90">
+                  <span>Home</span>
+                  <span>Services</span>
+                  <span>Track</span>
+                  <span className="px-3 py-1.5 font-semibold" style={{ background: v('btn_accent_bg'), color: v('btn_accent_text'), borderRadius: `${v('btn_radius')}px` }}>
+                    Merchant login
+                  </span>
+                </span>
+              </div>
+            </Section>
+
+            <Section title="Page size">
+              <div className="grid gap-6 md:grid-cols-2">
+                <RangeField
+                  label="Website width"
+                  value={v('site_width')}
+                  onChange={set('site_width')}
+                  min={960}
+                  max={1600}
+                  step={20}
+                  hint="How wide the content can get on big screens. 1200px is standard; 1400px+ feels wider."
+                />
+                <label className="block">
+                  <span className="label">Top banner height (home page)</span>
+                  <select className="input" value={v('hero_height')} onChange={(e) => set('hero_height')(e.target.value)}>
+                    <option value="0">Fit the content</option>
+                    <option value="60">Medium (60% of screen)</option>
+                    <option value="75">Tall (75% of screen)</option>
+                    <option value="85">Very tall (85% of screen)</option>
+                    <option value="100">Full screen</option>
+                  </select>
+                </label>
+              </div>
+            </Section>
+
+            <Section title="Buttons" hint="Colours for every button on the website and dashboards. 'Hover' is the colour when the mouse is over the button.">
+              <p className="text-xs font-bold tracking-wide text-slate-500 uppercase">Main buttons (dark)</p>
+              <div className="grid gap-4 md:grid-cols-3">
+                <ColorField label="Background" value={v('btn_primary_bg')} onChange={set('btn_primary_bg')} />
+                <ColorField label="Text" value={v('btn_primary_text')} onChange={set('btn_primary_text')} />
+                <ColorField label="Hover background" value={v('btn_primary_hover')} onChange={set('btn_primary_hover')} />
+              </div>
+              <p className="pt-2 text-xs font-bold tracking-wide text-slate-500 uppercase">Highlight buttons (e.g. "Track now", "Apply")</p>
+              <div className="grid gap-4 md:grid-cols-3">
+                <ColorField label="Background" value={v('btn_accent_bg')} onChange={set('btn_accent_bg')} />
+                <ColorField label="Text" value={v('btn_accent_text')} onChange={set('btn_accent_text')} />
+                <ColorField label="Hover background" value={v('btn_accent_hover')} onChange={set('btn_accent_hover')} />
+              </div>
+              <RangeField label="Corner roundness" value={v('btn_radius')} onChange={set('btn_radius')} min={0} max={30} hint="0 = square corners, 30 = pill-shaped." />
+              <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-2">
+                {(['primary', 'accent'] as const).map((kind) => (
+                  <div key={kind} className="flex flex-wrap items-center gap-3">
+                    {(['normal', 'hover'] as const).map((state) => (
+                      <span key={state} className="text-center">
+                        <span
+                          className="inline-block px-4 py-2 font-semibold"
+                          style={{
+                            background: v(state === 'hover' ? `btn_${kind}_hover` : `btn_${kind}_bg`),
+                            color: v(`btn_${kind}_text`),
+                            borderRadius: `${v('btn_radius')}px`,
+                          }}
+                        >
+                          {kind === 'primary' ? 'Sign in' : 'Track now →'}
+                        </span>
+                        <span className="mt-1 block text-[11px] text-slate-400">{state}</span>
+                      </span>
+                    ))}
+                  </div>
+                ))}
               </div>
             </Section>
           </>

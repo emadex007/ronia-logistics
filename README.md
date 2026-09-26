@@ -10,7 +10,8 @@ Built by Emadex Creations on TanStack Start + Cloudflare Workers, D1 and R2 (sam
 | 1 | Public site, package tracking page, staff login, first-admin setup, dashboard, shipments (create, status updates, timeline, who-handled-what), printable receipt & label, staff management | ✅ done |
 | 2 | Merchant portal: merchants, products/stock in warehouse, stock in/out/sold, merchant's own dashboard, deliveries & printable statements | ✅ done |
 | 3 | Income & expenses (who handled it, monthly totals, breakdowns, printable report), merchant payouts & balances, Paystack online payment on the tracking page | ✅ done |
-| 4 (next) | SMS / WhatsApp / email notifications (Termii + Resend), website settings & page editor, logo upload | |
+| ✓ | Website editor: logo, icon, colours, header, width, banner height, button colours & hover, all photos/video and text | ✅ done |
+| 4 (next) | SMS / WhatsApp / email notifications (Termii + Resend), proof-of-delivery photos | |
 
 The database already has every table for all four phases (`migrations/0001_init.sql`), so later phases don't need risky migrations.
 
