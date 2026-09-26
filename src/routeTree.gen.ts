@@ -12,11 +12,18 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MerchantRouteRouteImport } from './routes/merchant/route'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as TrackRouteImport } from './routes/track'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminStaffRouteImport } from './routes/admin/staff'
+import { Route as MerchantIndexRouteImport } from './routes/merchant/index'
+import { Route as MerchantDeliveriesRouteImport } from './routes/merchant/deliveries'
+import { Route as MerchantHistoryRouteImport } from './routes/merchant/history'
 import { Route as PrintIdRouteImport } from './routes/print.$id'
+import { Route as StatementIdRouteImport } from './routes/statement.$id'
+import { Route as AdminMerchantsIndexRouteImport } from './routes/admin/merchants/index'
+import { Route as AdminMerchantsIdRouteImport } from './routes/admin/merchants/$id'
 import { Route as AdminShipmentsIndexRouteImport } from './routes/admin/shipments/index'
 import { Route as AdminShipmentsIdRouteImport } from './routes/admin/shipments/$id'
 import { Route as AdminShipmentsNewRouteImport } from './routes/admin/shipments/new'
@@ -34,6 +41,11 @@ const AdminRouteRoute = AdminRouteRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MerchantRouteRoute = MerchantRouteRouteImport.update({
+  id: '/merchant',
+  path: '/merchant',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SetupRoute = SetupRouteImport.update({
@@ -56,10 +68,40 @@ const AdminStaffRoute = AdminStaffRouteImport.update({
   path: '/staff',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const MerchantIndexRoute = MerchantIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MerchantRouteRoute,
+} as any)
+const MerchantDeliveriesRoute = MerchantDeliveriesRouteImport.update({
+  id: '/deliveries',
+  path: '/deliveries',
+  getParentRoute: () => MerchantRouteRoute,
+} as any)
+const MerchantHistoryRoute = MerchantHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => MerchantRouteRoute,
+} as any)
 const PrintIdRoute = PrintIdRouteImport.update({
   id: '/print/$id',
   path: '/print/$id',
   getParentRoute: () => rootRouteImport,
+} as any)
+const StatementIdRoute = StatementIdRouteImport.update({
+  id: '/statement/$id',
+  path: '/statement/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminMerchantsIndexRoute = AdminMerchantsIndexRouteImport.update({
+  id: '/merchants/',
+  path: '/merchants/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminMerchantsIdRoute = AdminMerchantsIdRouteImport.update({
+  id: '/merchants/$id',
+  path: '/merchants/$id',
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminShipmentsIndexRoute = AdminShipmentsIndexRouteImport.update({
   id: '/shipments/',
@@ -80,14 +122,21 @@ const AdminShipmentsNewRoute = AdminShipmentsNewRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
+  '/merchant': typeof MerchantRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/setup': typeof SetupRoute
   '/track': typeof TrackRoute
   '/admin/staff': typeof AdminStaffRoute
+  '/merchant/deliveries': typeof MerchantDeliveriesRoute
+  '/merchant/history': typeof MerchantHistoryRoute
   '/print/$id': typeof PrintIdRoute
+  '/statement/$id': typeof StatementIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/merchant/': typeof MerchantIndexRoute
+  '/admin/merchants/$id': typeof AdminMerchantsIdRoute
   '/admin/shipments/$id': typeof AdminShipmentsIdRoute
   '/admin/shipments/new': typeof AdminShipmentsNewRoute
+  '/admin/merchants/': typeof AdminMerchantsIndexRoute
   '/admin/shipments/': typeof AdminShipmentsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -96,24 +145,37 @@ export interface FileRoutesByTo {
   '/setup': typeof SetupRoute
   '/track': typeof TrackRoute
   '/admin/staff': typeof AdminStaffRoute
+  '/merchant/deliveries': typeof MerchantDeliveriesRoute
+  '/merchant/history': typeof MerchantHistoryRoute
   '/print/$id': typeof PrintIdRoute
+  '/statement/$id': typeof StatementIdRoute
   '/admin': typeof AdminIndexRoute
+  '/merchant': typeof MerchantIndexRoute
+  '/admin/merchants/$id': typeof AdminMerchantsIdRoute
   '/admin/shipments/$id': typeof AdminShipmentsIdRoute
   '/admin/shipments/new': typeof AdminShipmentsNewRoute
+  '/admin/merchants': typeof AdminMerchantsIndexRoute
   '/admin/shipments': typeof AdminShipmentsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
+  '/merchant': typeof MerchantRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/setup': typeof SetupRoute
   '/track': typeof TrackRoute
   '/admin/staff': typeof AdminStaffRoute
+  '/merchant/deliveries': typeof MerchantDeliveriesRoute
+  '/merchant/history': typeof MerchantHistoryRoute
   '/print/$id': typeof PrintIdRoute
+  '/statement/$id': typeof StatementIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/merchant/': typeof MerchantIndexRoute
+  '/admin/merchants/$id': typeof AdminMerchantsIdRoute
   '/admin/shipments/$id': typeof AdminShipmentsIdRoute
   '/admin/shipments/new': typeof AdminShipmentsNewRoute
+  '/admin/merchants/': typeof AdminMerchantsIndexRoute
   '/admin/shipments/': typeof AdminShipmentsIndexRoute
 }
 export interface FileRouteTypes {
@@ -121,14 +183,21 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/merchant'
     | '/login'
     | '/setup'
     | '/track'
     | '/admin/staff'
+    | '/merchant/deliveries'
+    | '/merchant/history'
     | '/print/$id'
+    | '/statement/$id'
     | '/admin/'
+    | '/merchant/'
+    | '/admin/merchants/$id'
     | '/admin/shipments/$id'
     | '/admin/shipments/new'
+    | '/admin/merchants/'
     | '/admin/shipments/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -137,33 +206,48 @@ export interface FileRouteTypes {
     | '/setup'
     | '/track'
     | '/admin/staff'
+    | '/merchant/deliveries'
+    | '/merchant/history'
     | '/print/$id'
+    | '/statement/$id'
     | '/admin'
+    | '/merchant'
+    | '/admin/merchants/$id'
     | '/admin/shipments/$id'
     | '/admin/shipments/new'
+    | '/admin/merchants'
     | '/admin/shipments'
   id:
     | '__root__'
     | '/'
     | '/admin'
+    | '/merchant'
     | '/login'
     | '/setup'
     | '/track'
     | '/admin/staff'
+    | '/merchant/deliveries'
+    | '/merchant/history'
     | '/print/$id'
+    | '/statement/$id'
     | '/admin/'
+    | '/merchant/'
+    | '/admin/merchants/$id'
     | '/admin/shipments/$id'
     | '/admin/shipments/new'
+    | '/admin/merchants/'
     | '/admin/shipments/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
+  MerchantRouteRoute: typeof MerchantRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
   SetupRoute: typeof SetupRoute
   TrackRoute: typeof TrackRoute
   PrintIdRoute: typeof PrintIdRoute
+  StatementIdRoute: typeof StatementIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -187,6 +271,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/merchant': {
+      id: '/merchant'
+      path: '/merchant'
+      fullPath: '/merchant'
+      preLoaderRoute: typeof MerchantRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/setup': {
@@ -217,12 +308,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminStaffRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/merchant/': {
+      id: '/merchant/'
+      path: '/'
+      fullPath: '/merchant/'
+      preLoaderRoute: typeof MerchantIndexRouteImport
+      parentRoute: typeof MerchantRouteRoute
+    }
+    '/merchant/deliveries': {
+      id: '/merchant/deliveries'
+      path: '/deliveries'
+      fullPath: '/merchant/deliveries'
+      preLoaderRoute: typeof MerchantDeliveriesRouteImport
+      parentRoute: typeof MerchantRouteRoute
+    }
+    '/merchant/history': {
+      id: '/merchant/history'
+      path: '/history'
+      fullPath: '/merchant/history'
+      preLoaderRoute: typeof MerchantHistoryRouteImport
+      parentRoute: typeof MerchantRouteRoute
+    }
     '/print/$id': {
       id: '/print/$id'
       path: '/print/$id'
       fullPath: '/print/$id'
       preLoaderRoute: typeof PrintIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/statement/$id': {
+      id: '/statement/$id'
+      path: '/statement/$id'
+      fullPath: '/statement/$id'
+      preLoaderRoute: typeof StatementIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/merchants/': {
+      id: '/admin/merchants/'
+      path: '/merchants'
+      fullPath: '/admin/merchants/'
+      preLoaderRoute: typeof AdminMerchantsIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/merchants/$id': {
+      id: '/admin/merchants/$id'
+      path: '/merchants/$id'
+      fullPath: '/admin/merchants/$id'
+      preLoaderRoute: typeof AdminMerchantsIdRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
     '/admin/shipments/': {
       id: '/admin/shipments/'
@@ -251,16 +384,20 @@ declare module '@tanstack/react-router' {
 interface AdminRouteRouteChildren {
   AdminStaffRoute: typeof AdminStaffRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminMerchantsIdRoute: typeof AdminMerchantsIdRoute
   AdminShipmentsIdRoute: typeof AdminShipmentsIdRoute
   AdminShipmentsNewRoute: typeof AdminShipmentsNewRoute
+  AdminMerchantsIndexRoute: typeof AdminMerchantsIndexRoute
   AdminShipmentsIndexRoute: typeof AdminShipmentsIndexRoute
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminStaffRoute: AdminStaffRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminMerchantsIdRoute: AdminMerchantsIdRoute,
   AdminShipmentsIdRoute: AdminShipmentsIdRoute,
   AdminShipmentsNewRoute: AdminShipmentsNewRoute,
+  AdminMerchantsIndexRoute: AdminMerchantsIndexRoute,
   AdminShipmentsIndexRoute: AdminShipmentsIndexRoute,
 }
 
@@ -268,13 +405,31 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
   AdminRouteRouteChildren,
 )
 
+interface MerchantRouteRouteChildren {
+  MerchantDeliveriesRoute: typeof MerchantDeliveriesRoute
+  MerchantHistoryRoute: typeof MerchantHistoryRoute
+  MerchantIndexRoute: typeof MerchantIndexRoute
+}
+
+const MerchantRouteRouteChildren: MerchantRouteRouteChildren = {
+  MerchantDeliveriesRoute: MerchantDeliveriesRoute,
+  MerchantHistoryRoute: MerchantHistoryRoute,
+  MerchantIndexRoute: MerchantIndexRoute,
+}
+
+const MerchantRouteRouteWithChildren = MerchantRouteRoute._addFileChildren(
+  MerchantRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRouteRoute: AdminRouteRouteWithChildren,
+  MerchantRouteRoute: MerchantRouteRouteWithChildren,
   LoginRoute: LoginRoute,
   SetupRoute: SetupRoute,
   TrackRoute: TrackRoute,
   PrintIdRoute: PrintIdRoute,
+  StatementIdRoute: StatementIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -61,3 +61,13 @@ export const ROLE_LABELS: Record<string, string> = {
   rider: 'Rider / Driver',
   merchant: 'Merchant',
 }
+
+export const MOVEMENT_TYPES = [
+  { value: 'received', label: 'Stock received', sign: 1, tone: 'bg-emerald-100 text-emerald-800' },
+  { value: 'sold', label: 'Sold', sign: -1, tone: 'bg-orange-100 text-orange-800' },
+  { value: 'dispatched', label: 'Sent out / delivered', sign: -1, tone: 'bg-sky-100 text-sky-800' },
+  { value: 'returned', label: 'Returned to stock', sign: 1, tone: 'bg-violet-100 text-violet-800' },
+  { value: 'adjustment', label: 'Adjustment', sign: 0, tone: 'bg-slate-100 text-slate-700' },
+] as const
+export const movementLabel = (t: string) => MOVEMENT_TYPES.find((x) => x.value === t)?.label ?? t
+export const movementTone = (t: string) => MOVEMENT_TYPES.find((x) => x.value === t)?.tone ?? 'bg-slate-100 text-slate-700'

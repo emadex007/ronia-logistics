@@ -8,7 +8,7 @@ export const Route = createFileRoute('/login')({
   beforeLoad: async () => {
     if (await needsSetup()) throw redirect({ to: '/setup' })
     const me = await getMe()
-    if (me) throw redirect({ to: me.role === 'merchant' ? '/' : '/admin' })
+    if (me) throw redirect({ to: me.role === 'merchant' ? '/merchant' : '/admin' })
   },
   head: () => ({ meta: [{ title: 'Login — Ronia Logistics' }] }),
   component: LoginPage,
@@ -32,7 +32,7 @@ function LoginPage() {
           setBusy(false)
           if (!res.ok) return setError(res.error)
           await router.invalidate()
-          router.navigate({ to: res.role === 'merchant' ? '/' : '/admin' })
+          router.navigate({ to: res.role === 'merchant' ? '/merchant' : '/admin' })
         }}
       >
         {error && <Alert>{error}</Alert>}

@@ -65,3 +65,50 @@ export type ShipmentEvent = {
 }
 
 export type Settings = Record<string, string>
+
+export type Merchant = {
+  id: number
+  business_name: string
+  contact_name: string | null
+  phone: string | null
+  email: string | null
+  address: string | null
+  bank_name: string | null
+  account_name: string | null
+  account_number: string | null
+  notes: string | null
+  is_active: number
+  created_at: string
+}
+
+export type Product = {
+  id: number
+  merchant_id: number
+  sku: string | null
+  name: string
+  description: string | null
+  unit_price: number
+  quantity: number
+  low_stock_threshold: number
+  shelf_location: string | null
+  created_at: string
+}
+
+export type MovementType = 'received' | 'sold' | 'dispatched' | 'returned' | 'adjustment'
+
+export type StockMovement = {
+  id: number
+  product_id: number
+  merchant_id: number
+  type: MovementType
+  quantity: number
+  unit_price: number
+  reference: string | null
+  note: string | null
+  created_at: string
+  product_name?: string
+  sku?: string | null
+  handled_by_name?: string | null
+  tracking_code?: string | null
+  business_name?: string
+}

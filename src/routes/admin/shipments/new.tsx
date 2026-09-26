@@ -1,14 +1,17 @@
 import { useState, type FormEvent } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { createShipment } from '~/fns/shipments'
+import { merchantOptions } from '~/fns/merchants'
 import { Alert, Field, PageHeader } from '~/components/ui'
 import { SERVICE_TYPES, toKobo } from '~/lib/format'
 
 export const Route = createFileRoute('/admin/shipments/new')({
+  loader: () => merchantOptions(),
   component: NewShipment,
 })
 
 function NewShipment() {
+  const merchants = Route.useLoaderData()
   const navigate = useNavigate()
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -44,6 +47,7 @@ function NewShipment() {
         payment_method: f.payment_method,
         estimated_delivery: f.estimated_delivery,
         status: f.status === 'pending' ? 'pending' : 'received',
+        merchant_id: f.merchant_id ? Number(f.merchant_id) : null,
       },
     })
     setBusy(false)
@@ -133,6 +137,16 @@ function NewShipment() {
           </Field>
           <Field label="Estimated delivery">
             <input name="estimated_delivery" type="date" className="input" />
+          </Field>
+          <Field label="For merchant (optional)">
+            <select name="merchant_id" className="input" defaultValue="">
+              <option value="">— Walk-in customer —</option>
+              {merchants.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.business_name}
+                </option>
+              ))}
+            </select>
           </Field>
           <Field label="Package is…">
             <select name="status" className="input" defaultValue="received">

@@ -112,6 +112,7 @@ export type NewShipmentInput = {
   payment_method?: string
   estimated_delivery?: string
   status?: ShipmentStatus
+  merchant_id?: number | null
 }
 
 export const createShipment = createServerFn({ method: 'POST' })
@@ -131,8 +132,8 @@ export const createShipment = createServerFn({ method: 'POST' })
       `INSERT INTO shipments (tracking_code, sender_name, sender_phone, sender_email, sender_address,
           receiver_name, receiver_phone, receiver_email, receiver_address, origin_city, destination_city, destination_country,
           service_type, description, quantity, weight_kg, declared_value, shipping_fee, cod_amount, payment_status, payment_method,
-          status, current_location, created_by, received_by, estimated_delivery, created_at, updated_at)
-       VALUES (?,?,?,?,?, ?,?,?,?,?,?,?, ?,?,?,?,?,?,?,?,?, ?,?,?,?,?,?,?)`,
+          status, current_location, created_by, received_by, estimated_delivery, created_at, updated_at, merchant_id)
+       VALUES (?,?,?,?,?, ?,?,?,?,?,?,?, ?,?,?,?,?,?,?,?,?, ?,?,?,?,?,?,?,?)`,
       code,
       data.sender_name.trim(),
       data.sender_phone.trim(),
@@ -161,6 +162,7 @@ export const createShipment = createServerFn({ method: 'POST' })
       data.estimated_delivery || null,
       t,
       t,
+      data.merchant_id ? Number(data.merchant_id) : null,
     )
     const id = Number(res.meta.last_row_id)
 

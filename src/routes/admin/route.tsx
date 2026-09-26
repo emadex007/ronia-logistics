@@ -8,7 +8,7 @@ export const Route = createFileRoute('/admin')({
   beforeLoad: async () => {
     const user = await getMe()
     if (!user) throw redirect({ to: '/login' })
-    if (user.role === 'merchant') throw redirect({ to: '/' })
+    if (user.role === 'merchant') throw redirect({ to: '/merchant' })
     return { user }
   },
   head: () => ({ meta: [{ title: 'Dashboard — Ronia Logistics' }] }),
@@ -22,7 +22,7 @@ const NAV: NavItem[] = [
   { to: '/admin/shipments/new', label: 'New shipment', icon: '＋' },
   { to: '/admin/shipments', label: 'Shipments', icon: '📦', exact: true },
   { to: '/admin/staff', label: 'Staff', icon: '👥', roles: ['admin', 'manager'] },
-  { to: '#', label: 'Merchants & stock', icon: '🏬', soon: true },
+  { to: '/admin/merchants', label: 'Merchants & stock', icon: '🏬' },
   { to: '#', label: 'Income & expenses', icon: '₦', soon: true },
   { to: '#', label: 'Reports', icon: '📊', soon: true },
   { to: '#', label: 'Website settings', icon: '⚙', soon: true },
@@ -50,7 +50,7 @@ function AdminLayout() {
         ) : (
           <Link
             key={n.to}
-            to={n.to}
+            to={n.to as '/admin'}
             onClick={() => setOpen(false)}
             activeOptions={{ exact: !!n.exact }}
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white"
