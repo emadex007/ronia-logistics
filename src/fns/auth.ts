@@ -35,20 +35,61 @@ export const setupFirstAdmin = createServerFn({ method: 'POST' })
     return { ok: true as const }
   })
 
+export type Portal = 'staff' | 'merchant' | 'customer'
+
+const PORTAL_ROLES: Record<Portal, string[]> = {
+  staff: ['admin', 'manager', 'staff', 'rider'],
+  merchant: ['merchant'],
+  customer: ['customer'],
+}
+const PORTAL_HOME: Record<Portal, string> = { staff: '/admin', merchant: '/merchant', customer: '/account' }
+const PORTAL_NAME: Record<Portal, string> = { staff: 'staff', merchant: 'merchant', customer: 'customer' }
+
+/** Where each role belongs, so a wrong-door login can point people to the right page. */
+function portalOf(role: string): Portal {
+  return role === 'merchant' ? 'merchant' : role === 'customer' ? 'customer' : 'staff'
+}
+
 export const login = createServerFn({ method: 'POST' })
-  .inputValidator((d: { email: string; password: string }) => d)
+  .inputValidator((d: { email: string; password: string; portal: Portal }) => d)
   .handler(async ({ data }) => {
+    const portal: Portal = data.portal in PORTAL_ROLES ? data.portal : 'customer'
+    const email = (data.email ?? '').trim().toLowerCase()
     const user = await first<{ id: number; password_hash: string; role: string; is_active: number }>(
       'SELECT id, password_hash, role, is_active FROM users WHERE email = ?',
-      (data.email ?? '').trim().toLowerCase(),
+      email,
     )
-    if (!user || !(await verifyPassword(data.password ?? '', user.password_hash))) {
+
+    if (!user) {
+      // Merchant who applied but isn't approved yet
+      if (portal === 'merchant') {
+        const app = await first<{ status: string; reject_reason: string | null; password_hash: string }>(
+          'SELECT status, reject_reason, password_hash FROM merchant_applications WHERE email = ? ORDER BY id DESC LIMIT 1',
+          email,
+        )
+        if (app && (await verifyPassword(data.password ?? '', app.password_hash))) {
+          if (app.status === 'pending') return { ok: false as const, error: 'Your merchant application is still being reviewed. We will contact you once it is approved.' }
+          if (app.status === 'rejected')
+            return { ok: false as const, error: `Your merchant application was not approved${app.reject_reason ? `: ${app.reject_reason}` : '.'} Contact us for more information.` }
+        }
+      }
       return { ok: false as const, error: 'Incorrect email or password.' }
     }
-    if (!user.is_active) return { ok: false as const, error: 'This account has been disabled. Contact your administrator.' }
+    if (!(await verifyPassword(data.password ?? '', user.password_hash))) {
+      return { ok: false as const, error: 'Incorrect email or password.' }
+    }
+    if (!PORTAL_ROLES[portal].includes(user.role)) {
+      const right = portalOf(user.role)
+      return {
+        ok: false as const,
+        error: `This is a ${PORTAL_NAME[right]} account. Please use the ${PORTAL_NAME[right]} login page.`,
+        redirectTo: right === 'staff' ? '/staff/login' : right === 'merchant' ? '/merchant/login' : '/login',
+      }
+    }
+    if (!user.is_active) return { ok: false as const, error: 'This account has been disabled. Please contact Ronia Logistics.' }
     await createSession(user.id)
-    await audit(user.id, 'auth.login', 'user', user.id)
-    return { ok: true as const, role: user.role }
+    await audit(user.id, 'auth.login', 'user', user.id, { portal })
+    return { ok: true as const, role: user.role, home: PORTAL_HOME[portal] }
   })
 
 export const logout = createServerFn({ method: 'POST' }).handler(async () => {

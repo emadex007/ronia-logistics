@@ -10,17 +10,23 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MerchantRouteRouteImport } from './routes/merchant/route'
+import { Route as ReportRouteImport } from './routes/report'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as TrackRouteImport } from './routes/track'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminFinanceRouteImport } from './routes/admin/finance'
 import { Route as AdminStaffRouteImport } from './routes/admin/staff'
 import { Route as MerchantIndexRouteImport } from './routes/merchant/index'
 import { Route as MerchantDeliveriesRouteImport } from './routes/merchant/deliveries'
 import { Route as MerchantHistoryRouteImport } from './routes/merchant/history'
+import { Route as MerchantLoginRouteImport } from './routes/merchant_.login'
+import { Route as PayCallbackRouteImport } from './routes/pay.callback'
 import { Route as PrintIdRouteImport } from './routes/print.$id'
+import { Route as StaffLoginRouteImport } from './routes/staff.login'
 import { Route as StatementIdRouteImport } from './routes/statement.$id'
 import { Route as AdminMerchantsIndexRouteImport } from './routes/admin/merchants/index'
 import { Route as AdminMerchantsIdRouteImport } from './routes/admin/merchants/$id'
@@ -31,6 +37,11 @@ import { Route as AdminShipmentsNewRouteImport } from './routes/admin/shipments/
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRouteRoute = AdminRouteRouteImport.update({
@@ -48,6 +59,11 @@ const MerchantRouteRoute = MerchantRouteRouteImport.update({
   path: '/merchant',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReportRoute = ReportRouteImport.update({
+  id: '/report',
+  path: '/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
   path: '/setup',
@@ -61,6 +77,11 @@ const TrackRoute = TrackRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminFinanceRoute = AdminFinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminStaffRoute = AdminStaffRouteImport.update({
@@ -83,9 +104,24 @@ const MerchantHistoryRoute = MerchantHistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => MerchantRouteRoute,
 } as any)
+const MerchantLoginRoute = MerchantLoginRouteImport.update({
+  id: '/merchant_/login',
+  path: '/merchant/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PayCallbackRoute = PayCallbackRouteImport.update({
+  id: '/pay/callback',
+  path: '/pay/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrintIdRoute = PrintIdRouteImport.update({
   id: '/print/$id',
   path: '/print/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StaffLoginRoute = StaffLoginRouteImport.update({
+  id: '/staff/login',
+  path: '/staff/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StatementIdRoute = StatementIdRouteImport.update({
@@ -123,13 +159,19 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/merchant': typeof MerchantRouteRouteWithChildren
+  '/account': typeof AccountRoute
   '/login': typeof LoginRoute
+  '/report': typeof ReportRoute
   '/setup': typeof SetupRoute
   '/track': typeof TrackRoute
+  '/admin/finance': typeof AdminFinanceRoute
   '/admin/staff': typeof AdminStaffRoute
   '/merchant/deliveries': typeof MerchantDeliveriesRoute
   '/merchant/history': typeof MerchantHistoryRoute
+  '/merchant/login': typeof MerchantLoginRoute
+  '/pay/callback': typeof PayCallbackRoute
   '/print/$id': typeof PrintIdRoute
+  '/staff/login': typeof StaffLoginRoute
   '/statement/$id': typeof StatementIdRoute
   '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
@@ -141,13 +183,19 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/login': typeof LoginRoute
+  '/report': typeof ReportRoute
   '/setup': typeof SetupRoute
   '/track': typeof TrackRoute
+  '/admin/finance': typeof AdminFinanceRoute
   '/admin/staff': typeof AdminStaffRoute
   '/merchant/deliveries': typeof MerchantDeliveriesRoute
   '/merchant/history': typeof MerchantHistoryRoute
+  '/merchant/login': typeof MerchantLoginRoute
+  '/pay/callback': typeof PayCallbackRoute
   '/print/$id': typeof PrintIdRoute
+  '/staff/login': typeof StaffLoginRoute
   '/statement/$id': typeof StatementIdRoute
   '/admin': typeof AdminIndexRoute
   '/merchant': typeof MerchantIndexRoute
@@ -162,13 +210,19 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/merchant': typeof MerchantRouteRouteWithChildren
+  '/account': typeof AccountRoute
   '/login': typeof LoginRoute
+  '/report': typeof ReportRoute
   '/setup': typeof SetupRoute
   '/track': typeof TrackRoute
+  '/admin/finance': typeof AdminFinanceRoute
   '/admin/staff': typeof AdminStaffRoute
   '/merchant/deliveries': typeof MerchantDeliveriesRoute
   '/merchant/history': typeof MerchantHistoryRoute
+  '/merchant_/login': typeof MerchantLoginRoute
+  '/pay/callback': typeof PayCallbackRoute
   '/print/$id': typeof PrintIdRoute
+  '/staff/login': typeof StaffLoginRoute
   '/statement/$id': typeof StatementIdRoute
   '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
@@ -184,13 +238,19 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/merchant'
+    | '/account'
     | '/login'
+    | '/report'
     | '/setup'
     | '/track'
+    | '/admin/finance'
     | '/admin/staff'
     | '/merchant/deliveries'
     | '/merchant/history'
+    | '/merchant/login'
+    | '/pay/callback'
     | '/print/$id'
+    | '/staff/login'
     | '/statement/$id'
     | '/admin/'
     | '/merchant/'
@@ -202,13 +262,19 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account'
     | '/login'
+    | '/report'
     | '/setup'
     | '/track'
+    | '/admin/finance'
     | '/admin/staff'
     | '/merchant/deliveries'
     | '/merchant/history'
+    | '/merchant/login'
+    | '/pay/callback'
     | '/print/$id'
+    | '/staff/login'
     | '/statement/$id'
     | '/admin'
     | '/merchant'
@@ -222,13 +288,19 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/merchant'
+    | '/account'
     | '/login'
+    | '/report'
     | '/setup'
     | '/track'
+    | '/admin/finance'
     | '/admin/staff'
     | '/merchant/deliveries'
     | '/merchant/history'
+    | '/merchant_/login'
+    | '/pay/callback'
     | '/print/$id'
+    | '/staff/login'
     | '/statement/$id'
     | '/admin/'
     | '/merchant/'
@@ -243,10 +315,15 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   MerchantRouteRoute: typeof MerchantRouteRouteWithChildren
+  AccountRoute: typeof AccountRoute
   LoginRoute: typeof LoginRoute
+  ReportRoute: typeof ReportRoute
   SetupRoute: typeof SetupRoute
   TrackRoute: typeof TrackRoute
+  MerchantLoginRoute: typeof MerchantLoginRoute
+  PayCallbackRoute: typeof PayCallbackRoute
   PrintIdRoute: typeof PrintIdRoute
+  StaffLoginRoute: typeof StaffLoginRoute
   StatementIdRoute: typeof StatementIdRoute
 }
 
@@ -257,6 +334,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -280,6 +364,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/report': {
+      id: '/report'
+      path: '/report'
+      fullPath: '/report'
+      preLoaderRoute: typeof ReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/setup': {
       id: '/setup'
       path: '/setup'
@@ -299,6 +390,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/finance': {
+      id: '/admin/finance'
+      path: '/finance'
+      fullPath: '/admin/finance'
+      preLoaderRoute: typeof AdminFinanceRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/admin/staff': {
@@ -329,11 +427,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantHistoryRouteImport
       parentRoute: typeof MerchantRouteRoute
     }
+    '/merchant_/login': {
+      id: '/merchant_/login'
+      path: '/merchant/login'
+      fullPath: '/merchant/login'
+      preLoaderRoute: typeof MerchantLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pay/callback': {
+      id: '/pay/callback'
+      path: '/pay/callback'
+      fullPath: '/pay/callback'
+      preLoaderRoute: typeof PayCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/print/$id': {
       id: '/print/$id'
       path: '/print/$id'
       fullPath: '/print/$id'
       preLoaderRoute: typeof PrintIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/staff/login': {
+      id: '/staff/login'
+      path: '/staff/login'
+      fullPath: '/staff/login'
+      preLoaderRoute: typeof StaffLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/statement/$id': {
@@ -382,6 +501,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteRouteChildren {
+  AdminFinanceRoute: typeof AdminFinanceRoute
   AdminStaffRoute: typeof AdminStaffRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminMerchantsIdRoute: typeof AdminMerchantsIdRoute
@@ -392,6 +512,7 @@ interface AdminRouteRouteChildren {
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminFinanceRoute: AdminFinanceRoute,
   AdminStaffRoute: AdminStaffRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminMerchantsIdRoute: AdminMerchantsIdRoute,
@@ -425,10 +546,15 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRouteRoute: AdminRouteRouteWithChildren,
   MerchantRouteRoute: MerchantRouteRouteWithChildren,
+  AccountRoute: AccountRoute,
   LoginRoute: LoginRoute,
+  ReportRoute: ReportRoute,
   SetupRoute: SetupRoute,
   TrackRoute: TrackRoute,
+  MerchantLoginRoute: MerchantLoginRoute,
+  PayCallbackRoute: PayCallbackRoute,
   PrintIdRoute: PrintIdRoute,
+  StaffLoginRoute: StaffLoginRoute,
   StatementIdRoute: StatementIdRoute,
 }
 export const routeTree = rootRouteImport

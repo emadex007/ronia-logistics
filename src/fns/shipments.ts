@@ -166,6 +166,15 @@ export const createShipment = createServerFn({ method: 'POST' })
     )
     const id = Number(res.meta.last_row_id)
 
+    // If the sender has a customer account with this email, the shipment appears in their account
+    if (data.sender_email?.trim()) {
+      await run(
+        "UPDATE shipments SET customer_id = (SELECT id FROM users WHERE role = 'customer' AND email = ?) WHERE id = ?",
+        data.sender_email.trim().toLowerCase(),
+        id,
+      )
+    }
+
     await run(
       'INSERT INTO shipment_events (shipment_id, status, location, note, staff_id, created_at) VALUES (?, ?, ?, ?, ?, ?)',
       id,

@@ -5,7 +5,8 @@ import { Logo } from '~/components/ui'
 export const Route = createFileRoute('/merchant')({
   beforeLoad: async () => {
     const user = await getMe()
-    if (!user) throw redirect({ to: '/login' })
+    if (!user) throw redirect({ to: '/merchant/login' })
+    if (user.role === 'customer') throw redirect({ to: '/account' })
     if (user.role !== 'merchant') throw redirect({ to: '/admin' })
     return { user }
   },
@@ -37,7 +38,7 @@ function MerchantLayout() {
               onClick={async () => {
                 await logout()
                 await router.invalidate()
-                router.navigate({ to: '/login' })
+                router.navigate({ to: '/merchant/login' })
               }}
             >
               Log out

@@ -19,8 +19,13 @@ export function SiteLayout({ settings, children }: { settings: Settings; childre
             <Link to="/track" search={{ code: '' }} className="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
               Track
             </Link>
-            <Link to="/login" className="btn-primary !px-3 !py-1.5">
-              Staff / Merchant login
+            <Link to="/login" className="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
+              <span className="sm:hidden">Login</span>
+              <span className="hidden sm:inline">Customer login</span>
+            </Link>
+            <Link to="/merchant/login" className="btn-primary !px-3 !py-1.5">
+              <span className="sm:hidden">Merchants</span>
+              <span className="hidden sm:inline">Merchant login</span>
             </Link>
           </nav>
         </div>
@@ -58,7 +63,17 @@ export function SiteLayout({ settings, children }: { settings: Settings; childre
               </li>
               <li>
                 <Link to="/login" className="hover:text-white">
-                  Merchant portal
+                  Customer login
+                </Link>
+              </li>
+              <li>
+                <Link to="/merchant/login" className="hover:text-white">
+                  Merchant login
+                </Link>
+              </li>
+              <li>
+                <Link to="/merchant/login" search={{ tab: 'apply' }} className="hover:text-white">
+                  Become a merchant
                 </Link>
               </li>
               {wa && (

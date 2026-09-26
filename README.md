@@ -30,7 +30,7 @@ npx wrangler r2 bucket create ronia-logistics-media
 npm run db:migrate:local      # for local dev
 npm run db:migrate:remote     # for the live site
 
-# 3. Run locally → http://localhost:3000  (first visit to /login sends you to /setup to create the admin)
+# 3. Run locally → http://localhost:3000  (first visit to /staff/login sends you to /setup to create the admin)
 npm run dev
 
 # 4. Deploy
@@ -59,9 +59,18 @@ git push -u origin main
 - `migrations/`: D1 schema
 - Money is stored in **kobo** (₦1 = 100)
 
+## Login pages
+
+| Who | Page | Notes |
+|---|---|---|
+| Admin & staff | `/staff/login` | Not linked on the website — bookmark it |
+| Merchants | `/merchant/login` | "Merchant login" button on the website. New merchants **apply** here; an admin must approve before they can sign in |
+| Customers | `/login` | Optional. Anyone can track without an account. Shipments whose sender email matches the account appear automatically |
+
 ## Roles
 
 - **Administrator**: everything, including adding and disabling staff
 - **Manager**: all operations and money figures, can view staff
 - **Front desk / Warehouse** and **Rider / Driver**: create shipments, update statuses, record payments
 - **Merchant**: their own portal only (`/merchant`): stock, history, deliveries, statements
+- **Customer**: `/account`: their packages and packages they follow

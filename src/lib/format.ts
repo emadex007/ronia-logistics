@@ -60,6 +60,7 @@ export const ROLE_LABELS: Record<string, string> = {
   staff: 'Front desk / Warehouse',
   rider: 'Rider / Driver',
   merchant: 'Merchant',
+  customer: 'Customer',
 }
 
 export const MOVEMENT_TYPES = [

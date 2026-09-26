@@ -37,7 +37,12 @@ export const getDashboard = createServerFn({ method: 'GET' }).handler(async () =
        FROM shipments ORDER BY created_at DESC LIMIT 8`,
   )
 
+  const pendingApplications = canSeeMoney
+    ? ((await first<{ n: number }>("SELECT COUNT(*) AS n FROM merchant_applications WHERE status = 'pending'"))?.n ?? 0)
+    : 0
+
   return {
+    pendingApplications,
     statusCounts: Object.fromEntries(byStatus.map((r) => [r.status, r.n])) as Record<string, number>,
     todayCount,
     deliveredToday,

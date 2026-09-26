@@ -16,7 +16,7 @@ export const Route = createFileRoute('/report')({
   }),
   beforeLoad: async () => {
     const me = await getMe()
-    if (!me || (me.role !== 'admin' && me.role !== 'manager')) throw redirect({ to: '/login' })
+    if (!me || (me.role !== 'admin' && me.role !== 'manager')) throw redirect({ to: '/staff/login' })
     return { me }
   },
   loaderDeps: ({ search }) => search,

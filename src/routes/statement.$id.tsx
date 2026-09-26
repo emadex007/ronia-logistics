@@ -14,7 +14,8 @@ export const Route = createFileRoute('/statement/$id')({
     to: typeof s.to === 'string' && s.to ? s.to : undefined,
   }),
   beforeLoad: async () => {
-    if (!(await getMe())) throw redirect({ to: '/login' })
+    const me = await getMe()
+    if (!me || me.role === 'customer') throw redirect({ to: '/staff/login' })
   },
   loaderDeps: ({ search }) => search,
   loader: async ({ params, deps }) => {

@@ -7,8 +7,9 @@ import { ROLE_LABELS } from '~/lib/format'
 export const Route = createFileRoute('/admin')({
   beforeLoad: async () => {
     const user = await getMe()
-    if (!user) throw redirect({ to: '/login' })
+    if (!user) throw redirect({ to: '/staff/login' })
     if (user.role === 'merchant') throw redirect({ to: '/merchant' })
+    if (user.role === 'customer') throw redirect({ to: '/account' })
     return { user }
   },
   head: () => ({ meta: [{ title: 'Dashboard — Ronia Logistics' }] }),
@@ -71,7 +72,7 @@ function AdminLayout() {
           onClick={async () => {
             await logout()
             await router.invalidate()
-            router.navigate({ to: '/login' })
+            router.navigate({ to: '/staff/login' })
           }}
         >
           Log out

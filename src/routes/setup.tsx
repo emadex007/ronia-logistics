@@ -6,7 +6,7 @@ import { AuthShell } from '~/components/AuthShell'
 
 export const Route = createFileRoute('/setup')({
   beforeLoad: async () => {
-    if (!(await needsSetup())) throw redirect({ to: '/login' })
+    if (!(await needsSetup())) throw redirect({ to: '/staff/login' })
   },
   head: () => ({ meta: [{ title: 'First-time setup — Ronia Logistics' }] }),
   component: SetupPage,

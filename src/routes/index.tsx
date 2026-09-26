@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { getSiteContent } from '~/fns/public'
 import { SiteLayout } from '~/components/SiteLayout'
 
@@ -114,9 +114,14 @@ function Home() {
               your own merchant dashboard.
             </p>
           </div>
-          <a href={`tel:${settings.phone}`} className="btn-accent mt-6 self-start">
-            Call {settings.phone}
-          </a>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Link to="/merchant/login" search={{ tab: 'apply' }} className="btn-accent">
+              Apply to become a merchant
+            </Link>
+            <a href={`tel:${settings.phone}`} className="btn border border-white/30 text-white hover:bg-white/10">
+              Call {settings.phone}
+            </a>
+          </div>
         </div>
       </section>
     </SiteLayout>

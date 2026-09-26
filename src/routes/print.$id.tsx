@@ -10,7 +10,7 @@ export const Route = createFileRoute('/print/$id')({
   validateSearch: (s: Record<string, unknown>): { type: 'receipt' | 'label' } => ({ type: s.type === 'label' ? 'label' : 'receipt' }),
   beforeLoad: async () => {
     const me = await getMe()
-    if (!me || me.role === 'merchant') throw redirect({ to: '/login' })
+    if (!me || me.role === 'merchant' || me.role === 'customer') throw redirect({ to: '/staff/login' })
   },
   loader: async ({ params }) => {
     const [res, site] = await Promise.all([getShipment({ data: { id: Number(params.id) } }), getSiteContent()])

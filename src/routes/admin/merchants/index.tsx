@@ -1,23 +1,28 @@
 import { useState } from 'react'
-import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Link, createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
 import { listMerchants, saveMerchant } from '~/fns/merchants'
+import { approveApplication, listApplications, rejectApplication } from '~/fns/accounts'
 import { Alert, PageHeader } from '~/components/ui'
 import { MerchantFields } from '~/components/MerchantBits'
-import { money } from '~/lib/format'
+import { dateTime, money } from '~/lib/format'
 
 export const Route = createFileRoute('/admin/merchants/')({
   validateSearch: (s: Record<string, unknown>): { q?: string } => (typeof s.q === 'string' && s.q ? { q: s.q } : {}),
   loaderDeps: ({ search }) => search,
-  loader: ({ deps }) => listMerchants({ data: deps }),
+  loader: async ({ deps }) => {
+    const [rows, applications] = await Promise.all([listMerchants({ data: deps }), listApplications({ data: { status: 'pending' } })])
+    return { rows, applications }
+  },
   head: () => ({ meta: [{ title: 'Merchants — Ronia Logistics' }] }),
   component: MerchantsPage,
 })
 
 function MerchantsPage() {
-  const rows = Route.useLoaderData()
+  const { rows, applications } = Route.useLoaderData()
   const { user } = Route.useRouteContext()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: '/admin/merchants/' })
+  const router = useRouter()
   const canManage = user.role === 'admin' || user.role === 'manager'
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState('')
@@ -68,6 +73,68 @@ function MerchantsPage() {
             </button>
           </div>
         </form>
+      )}
+
+      {applications.length > 0 && (
+        <div className="card mb-6 overflow-hidden border-accent-400/50">
+          <div className="flex items-center justify-between border-b border-orange-100 bg-orange-50 px-5 py-3">
+            <h2 className="font-display font-bold text-orange-900">Pending applications ({applications.length})</h2>
+            <p className="text-xs text-orange-800">Approving creates the merchant and activates their login.</p>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {applications.map((a) => (
+              <div key={a.id} className="flex flex-wrap items-start gap-4 px-5 py-4">
+                <div className="min-w-0 flex-1 text-sm">
+                  <p className="font-display text-base font-bold text-brand-900">{a.business_name}</p>
+                  <p className="text-slate-600">
+                    {a.contact_name} · <a href={`tel:${a.phone}`} className="text-brand-500 hover:underline">{a.phone}</a> · {a.email}
+                  </p>
+                  {a.address && <p className="text-slate-500">{a.address}</p>}
+                  {a.what_they_sell && <p className="text-slate-500">Sells: {a.what_they_sell}</p>}
+                  <p className="mt-1 text-xs text-slate-400">Applied {dateTime(a.created_at)}</p>
+                </div>
+                {canManage && (
+                  <div className="flex gap-2">
+                    <button
+                      className="btn-accent"
+                      disabled={busy}
+                      onClick={async () => {
+                        if (!confirm(`Approve ${a.business_name} as a merchant? Their login will work immediately.`)) return
+                        setBusy(true)
+                        const res = await approveApplication({ data: { id: a.id } })
+                        setBusy(false)
+                        if (!res.ok) return setError(res.error)
+                        navigate({ to: '/admin/merchants/$id', params: { id: String(res.merchantId) } })
+                      }}
+                    >
+                      ✓ Approve
+                    </button>
+                    <button
+                      className="btn-ghost"
+                      disabled={busy}
+                      onClick={async () => {
+                        const reason = prompt(`Reason for rejecting ${a.business_name}? (they will see this when they try to sign in)`)
+                        if (reason === null) return
+                        setBusy(true)
+                        const res = await rejectApplication({ data: { id: a.id, reason } })
+                        setBusy(false)
+                        if (!res.ok) return setError(res.error)
+                        router.invalidate()
+                      }}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {error && !showForm && (
+        <div className="mb-4">
+          <Alert>{error}</Alert>
+        </div>
       )}
 
       <form

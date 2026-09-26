@@ -1,4 +1,4 @@
-export type Role = 'admin' | 'manager' | 'staff' | 'rider' | 'merchant'
+export type Role = 'admin' | 'manager' | 'staff' | 'rider' | 'merchant' | 'customer'
 
 export type SessionUser = {
   id: number
