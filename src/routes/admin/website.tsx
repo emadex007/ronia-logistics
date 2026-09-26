@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
-import { getSiteSettings, saveSiteSettings } from '~/fns/site'
+import { exportSite, getSiteSettings, importSite, saveSiteSettings } from '~/fns/site'
 import { Alert, PageHeader } from '~/components/ui'
 import { ColorField, ListEditor, MediaField, RangeField, Section, TextField } from '~/components/SiteEditorFields'
 import { SOCIALS, type Faq, type Service, type Stat, type Step } from '~/lib/site'
@@ -50,6 +50,51 @@ function WebsiteEditor() {
   const list = <T,>(k: string, fallback: T[] = []) => parse<T[]>(values[k], fallback)
   const setList = (k: string) => (items: unknown[]) => setValues((s) => ({ ...s, [k]: JSON.stringify(items) }))
 
+  const importInput = useRef<HTMLInputElement>(null)
+
+  const doExport = async () => {
+    setBusy(true)
+    setMsg(null)
+    try {
+      const data = await exportSite()
+      const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `website-${location.hostname.replace(/[^a-z0-9]+/gi, '-')}-${new Date().toISOString().slice(0, 10)}.json`
+      a.click()
+      URL.revokeObjectURL(a.href)
+      setMsg({
+        tone: 'success',
+        text: `Exported ${Object.keys(data.settings).length} settings and ${Object.keys(data.media).length} uploaded file(s).${data.skipped.length ? ` Not included: ${data.skipped.join(', ')}.` : ''}`,
+      })
+    } catch (e) {
+      setMsg({ tone: 'error', text: e instanceof Error ? e.message : 'Export failed.' })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const doImport = async (file: File) => {
+    if (!confirm('Replace this website’s pictures, text, colours and settings with the ones in this file?')) return
+    setBusy(true)
+    setMsg(null)
+    const fd = new FormData()
+    fd.append('file', file)
+    try {
+      const res = await importSite({ data: fd })
+      if (!res.ok) return setMsg({ tone: 'error', text: res.error })
+      await router.invalidate()
+      setMsg({
+        tone: 'success',
+        text: `Imported ${res.settings} settings and ${res.media} photo/video file(s).${res.skipped.length ? ` Re-upload these by hand: ${res.skipped.join(', ')}.` : ''}`,
+      })
+    } catch (e) {
+      setMsg({ tone: 'error', text: e instanceof Error ? e.message : 'Import failed.' })
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const save = async () => {
     setBusy(true)
     setMsg(null)
@@ -66,9 +111,28 @@ function WebsiteEditor() {
         title="Website editor"
         subtitle="Change the logo, colours, pictures, videos and all the text on the public website."
         actions={
-          <a href="/" target="_blank" rel="noreferrer" className="btn-ghost">
-            View website ↗
-          </a>
+          <>
+            <button type="button" className="btn-ghost" disabled={busy} onClick={doExport} title="Download everything in the Website editor, including uploaded photos">
+              ⬇ Export
+            </button>
+            <button type="button" className="btn-ghost" disabled={busy} onClick={() => importInput.current?.click()} title="Load an export file from another copy of the site">
+              ⬆ Import
+            </button>
+            <input
+              ref={importInput}
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                e.target.value = ''
+                if (f) doImport(f)
+              }}
+            />
+            <a href="/" target="_blank" rel="noreferrer" className="btn-ghost">
+              View website ↗
+            </a>
+          </>
         }
       />
 

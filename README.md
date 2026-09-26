@@ -68,6 +68,9 @@ Uploads go to the R2 bucket and are served from `/media/…`. The default photos
 
 Only the **Administrator** and staff ticked as **Website editor** on the Staff page can open it.
 
+**Copying the website between localhost and live:** Website → **⬇ Export** downloads one `.json` file with every setting
+plus the uploaded photos/logo. On the other site, Website → **⬆ Import** that file. (Shipments, staff and merchants are not copied.)
+
 ## Login pages
 
 | Who | Page | Notes |
