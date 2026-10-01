@@ -33,24 +33,31 @@ async function serveMedia(request: Request, env: Cloudflare.Env, key: string) {
 /** The "install as app" description, built from Admin → Website (name, colours, app icon). */
 async function manifest(env: Cloudflare.Env) {
   const rows = await env.DB.prepare(
-    "SELECT key, value FROM settings WHERE key IN ('company_name','app_short_name','tagline','primary_color','app_icon_key')",
+    "SELECT key, value FROM settings WHERE key IN ('company_name','app_short_name','tagline','primary_color','app_icon_key','app_icon_192_key','app_icon_maskable_key','app_icon_bg')",
   ).all<{ key: string; value: string }>()
   const s = Object.fromEntries(rows.results.map((r) => [r.key, r.value])) as Record<string, string>
   const name = s.company_name || 'Ronia Logistics'
   const hex = (v: string | undefined, d: string) => (/^#[0-9a-f]{6}$/i.test(v || '') ? v! : d)
-  const custom = s.app_icon_key && !/^https?:/i.test(s.app_icon_key) ? `/media/${s.app_icon_key}` : s.app_icon_key || ''
-  const icons = custom
-    ? [
-        { src: custom, sizes: '512x512', purpose: 'any' },
-        { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-        { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-        { src: '/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-      ]
+  const media = (k?: string) => (!k ? '' : /^https?:/i.test(k) ? k : `/media/${k}`)
+  const i512 = media(s.app_icon_key)
+  const i192 = media(s.app_icon_192_key)
+  const iMask = media(s.app_icon_maskable_key)
+  // Only ever offer ONE design: phones (especially Android) pick the maskable icon for the home screen,
+  // so mixing the built-in icon with a custom one shows the wrong logo.
+  const icons = i512
+    ? i192 && iMask
+      ? [
+          { src: i192, sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: i512, sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: iMask, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ]
+      : [{ src: i512, sizes: '512x512', purpose: 'any maskable' }]
     : [
         { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
         { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
         { src: '/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
       ]
+  const shortcutIcon = [{ src: i192 || i512 || '/icon-192.png', sizes: '192x192' }]
   const body = {
     id: '/',
     name,
@@ -60,14 +67,14 @@ async function manifest(env: Cloudflare.Env) {
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
-    background_color: '#ffffff',
+    background_color: hex(s.app_icon_bg, '#ffffff'),
     theme_color: hex(s.primary_color, '#0b2545'),
     icons,
     shortcuts: [
-      { name: 'Track a package', url: '/track', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
-      { name: 'Book a delivery', url: '/book', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
-      { name: 'My deliveries (riders)', url: '/admin/deliveries', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
-      { name: 'Merchant portal', url: '/merchant', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
+      { name: 'Track a package', url: '/track', icons: shortcutIcon },
+      { name: 'Book a delivery', url: '/book', icons: shortcutIcon },
+      { name: 'My deliveries (riders)', url: '/admin/deliveries', icons: shortcutIcon },
+      { name: 'Merchant portal', url: '/merchant', icons: shortcutIcon },
     ],
   }
   return new Response(JSON.stringify(body), {

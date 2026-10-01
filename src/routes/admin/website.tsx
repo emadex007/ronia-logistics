@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
 import { exportSite, getSiteSettings, importSite, saveSiteSettings } from '~/fns/site'
 import { EmailSettings } from '~/components/EmailSettings'
+import { AppIconField } from '~/components/AppIconField'
 import { Alert, PageHeader } from '~/components/ui'
 import { SocialLogo } from '~/components/SocialIcons'
 import { ColorField, ListEditor, MediaField, RangeField, Section, TextField } from '~/components/SiteEditorFields'
@@ -189,15 +190,8 @@ function WebsiteEditor() {
               </div>
             </Section>
             <Section title="Phone app" hint="How the app looks when customers, riders and merchants install the website on their phone.">
-              <div className="grid gap-6 md:grid-cols-[1fr_2fr]">
-                <MediaField
-                  label="App icon"
-                  value={v('app_icon_key')}
-                  onChange={set('app_icon_key')}
-                  kind="icon"
-                  aspect="aspect-square"
-                  hint="Square PNG, exactly 512×512, no transparent corners. Leave empty to use the built-in navy “R” icon."
-                />
+              <div className="grid gap-6 md:grid-cols-[3fr_2fr]">
+                <AppIconField v={v} set={set} />
                 <div className="space-y-3">
                   <TextField
                     label="Name under the icon"
@@ -207,7 +201,7 @@ function WebsiteEditor() {
                     hint="Up to 12 letters — phones cut off longer names."
                   />
                   <p className="text-xs text-slate-500">
-                    The app uses your main brand colour for the top bar. Phones that already installed the app pick up a new icon after a day or two (or reinstall).
+                    The app uses your main brand colour for the top bar. After changing the icon, click Save changes. Phones that already installed the app update the icon within a day or two — or remove the app and install it again to see it straight away.
                   </p>
                 </div>
               </div>

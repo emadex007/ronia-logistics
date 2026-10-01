@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { useSiteSettings } from './useSite'
+import { mediaUrl } from '~/lib/site'
 
 type PromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> }
 
@@ -70,11 +72,13 @@ export function InstallAppButton({ className = '', label = '📲 Install our app
 }
 
 export function InstallHelp({ ios, onClose }: { ios: boolean; onClose: () => void }) {
+  const site = useSiteSettings()
+  const icon = site.app_icon_key ? mediaUrl(site.app_icon_key) : '/icon-192.png'
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 p-3 sm:items-center" onClick={onClose}>
       <div className="w-full max-w-sm rounded-2xl bg-white p-5 text-slate-800 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 flex items-center gap-3">
-          <img src="/icon-192.png" alt="" className="h-12 w-12 rounded-xl" />
+          <img src={icon} alt="" className="h-12 w-12 rounded-xl" />
           <p className="font-display text-lg font-bold text-brand-900">Install the app</p>
         </div>
         {ios ? (
