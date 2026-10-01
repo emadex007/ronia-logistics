@@ -194,14 +194,26 @@ function WebsiteEditor() {
                 <AppIconField v={v} set={set} />
                 <div className="space-y-3">
                   <TextField
-                    label="Name under the icon"
+                    label="App name (shown in the install box)"
+                    value={v('app_name')}
+                    onChange={set('app_name')}
+                    placeholder={v('company_name') || 'Ronia Logistics'}
+                    hint="Leave empty to use the company name."
+                  />
+                  <TextField
+                    label="Name under the icon (home screen)"
                     value={v('app_short_name')}
                     onChange={set('app_short_name')}
                     placeholder="Ronia"
-                    hint="Up to 12 letters — phones cut off longer names."
+                    hint={`Up to 12 letters — phones cut off longer names.${(v('app_short_name') || '').trim().length > 12 ? ` “${v('app_short_name').trim().slice(0, 12)}” is what will show.` : ''}`}
+                  />
+                  <AppPreview
+                    icon={v('app_icon_key') ? mediaUrl(v('app_icon_key')) : '/icon-512.png'}
+                    full={(v('app_name') || v('company_name') || 'Ronia Logistics').trim()}
+                    short={(v('app_short_name') || v('app_name') || v('company_name') || 'Ronia').trim().slice(0, 12)}
                   />
                   <p className="text-xs text-slate-500">
-                    The app uses your main brand colour for the top bar. After changing the icon, click Save changes. Phones that already installed the app update the icon within a day or two — or remove the app and install it again to see it straight away.
+                    After changing the name or icon: click <b>Save changes</b>, wait one minute, then remove the app from the phone and install it again from ronialogistics.com/app. Phones that keep the app update by themselves within a day or two.
                   </p>
                 </div>
               </div>
@@ -630,6 +642,28 @@ function WebsiteEditor() {
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  )
+}
+
+/** What the phone will show: the Android install box and the home-screen icon. */
+function AppPreview({ icon, full, short }: { icon: string; full: string; short: string }) {
+  return (
+    <div className="grid gap-3 rounded-xl bg-slate-900 p-4 text-white sm:grid-cols-[1fr_auto]">
+      <div className="rounded-xl bg-slate-800 p-3">
+        <p className="text-sm">Install app</p>
+        <div className="mt-2 flex items-center gap-3">
+          <img src={icon} alt="" className="h-10 w-10 rounded-lg object-cover" />
+          <div>
+            <p className="text-sm font-medium">{full}</p>
+            <p className="text-xs text-slate-400">ronialogistics.com</p>
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-col items-center justify-center px-3">
+        <img src={icon} alt="" className="h-14 w-14 rounded-2xl object-cover" />
+        <p className="mt-1 max-w-[80px] truncate text-xs">{short}</p>
       </div>
     </div>
   )

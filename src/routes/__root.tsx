@@ -5,6 +5,16 @@ import appCss from '~/styles.css?url'
 import { getSiteContent } from '~/fns/public'
 import { brandCss, mediaUrl } from '~/lib/site'
 
+/** Changes whenever the app's name, icon or colours change, so phones fetch the new app details instead of a saved copy. */
+function appVersion(st: Record<string, string>) {
+  const raw = ['app_name', 'company_name', 'app_short_name', 'app_icon_key', 'app_icon_192_key', 'app_icon_maskable_key', 'app_icon_bg', 'primary_color']
+    .map((k) => st[k] ?? '')
+    .join('|')
+  let h = 0
+  for (let i = 0; i < raw.length; i++) h = (h * 31 + raw.charCodeAt(i)) | 0
+  return (h >>> 0).toString(36)
+}
+
 function iconType(key: string) {
   const ext = key.split('.').pop()?.toLowerCase()
   return ext === 'ico' ? 'image/x-icon' : ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : ext === 'gif' ? 'image/gif' : 'image/jpeg'
@@ -26,7 +36,7 @@ export const Route = createRootRoute({
         { name: 'mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
-        { name: 'apple-mobile-web-app-title', content: (st.app_short_name || name).slice(0, 12) },
+        { name: 'apple-mobile-web-app-title', content: (st.app_short_name || st.app_name || name).trim().slice(0, 12) },
         { property: 'og:title', content: name },
         { property: 'og:description', content: st.seo_description || st.tagline || '' },
         ...(st.hero_image ? [{ property: 'og:image', content: mediaUrl(st.hero_image) }] : []),
@@ -36,7 +46,7 @@ export const Route = createRootRoute({
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
         { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap' },
         { rel: 'stylesheet', href: appCss },
-        { rel: 'manifest', href: '/manifest.webmanifest' },
+        { rel: 'manifest', href: `/manifest.webmanifest?v=${appVersion(st)}` },
         { rel: 'apple-touch-icon', href: st.app_icon_key ? mediaUrl(st.app_icon_key) : '/apple-touch-icon.png' },
         ...(st.favicon_key
           ? [

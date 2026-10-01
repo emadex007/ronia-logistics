@@ -33,10 +33,10 @@ async function serveMedia(request: Request, env: Cloudflare.Env, key: string) {
 /** The "install as app" description, built from Admin → Website (name, colours, app icon). */
 async function manifest(env: Cloudflare.Env) {
   const rows = await env.DB.prepare(
-    "SELECT key, value FROM settings WHERE key IN ('company_name','app_short_name','tagline','primary_color','app_icon_key','app_icon_192_key','app_icon_maskable_key','app_icon_bg')",
+    "SELECT key, value FROM settings WHERE key IN ('company_name','app_name','app_short_name','tagline','primary_color','app_icon_key','app_icon_192_key','app_icon_maskable_key','app_icon_bg')",
   ).all<{ key: string; value: string }>()
   const s = Object.fromEntries(rows.results.map((r) => [r.key, r.value])) as Record<string, string>
-  const name = s.company_name || 'Ronia Logistics'
+  const name = (s.app_name || s.company_name || 'Ronia Logistics').trim()
   const hex = (v: string | undefined, d: string) => (/^#[0-9a-f]{6}$/i.test(v || '') ? v! : d)
   const media = (k?: string) => (!k ? '' : /^https?:/i.test(k) ? k : `/media/${k}`)
   const i512 = media(s.app_icon_key)
@@ -61,7 +61,7 @@ async function manifest(env: Cloudflare.Env) {
   const body = {
     id: '/',
     name,
-    short_name: (s.app_short_name || name).slice(0, 12),
+    short_name: (s.app_short_name || name).trim().slice(0, 12),
     description: s.tagline || 'Book deliveries and track packages.',
     start_url: '/?app=1',
     scope: '/',
@@ -78,7 +78,7 @@ async function manifest(env: Cloudflare.Env) {
     ],
   }
   return new Response(JSON.stringify(body), {
-    headers: { 'content-type': 'application/manifest+json', 'cache-control': 'public, max-age=300' },
+    headers: { 'content-type': 'application/manifest+json', 'cache-control': 'no-cache, must-revalidate' },
   })
 }
 

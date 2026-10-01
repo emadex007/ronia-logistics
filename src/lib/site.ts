@@ -109,5 +109,5 @@ export const EDITABLE_KEYS = [
   'logo_height', 'logo_show_name', 'logo_name_size', 'base_font_size',
   'footer_bg', 'footer_text', 'footer_heading', 'footer_about', 'footer_copyright', 'footer_show_logo',
   'chat_enabled', 'chat_title', 'chat_greeting', 'contact_form_title',
-  'app_icon_key', 'app_short_name', 'app_icon_source_key', 'app_icon_192_key', 'app_icon_maskable_key', 'app_icon_bg', 'app_icon_fill', 'app_icon_built_for', 'site_url', 'email_from', 'notify_email', 'email_office_on', 'email_customers_on', 'email_merchants_on', 'forward_email_to',
+  'app_icon_key', 'app_name', 'app_short_name', 'app_icon_source_key', 'app_icon_192_key', 'app_icon_maskable_key', 'app_icon_bg', 'app_icon_fill', 'app_icon_built_for', 'site_url', 'email_from', 'notify_email', 'email_office_on', 'email_customers_on', 'email_merchants_on', 'forward_email_to',
 ] as const
