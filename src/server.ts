@@ -2,6 +2,7 @@
 // except /media/* which streams uploaded logos, photos and videos straight from R2.
 // (Phase 4 adds a `scheduled` handler here to send queued SMS/email notifications.)
 import handler from '@tanstack/react-start/server-entry'
+import { forwardCopy, handleIncomingEmail } from './server/inbound-email'
 
 async function serveMedia(request: Request, env: Cloudflare.Env, key: string) {
   if (!key || key.includes('..')) return new Response('Not found', { status: 404 })
@@ -49,5 +50,15 @@ export default {
       return serveMedia(request, env, decodeURIComponent(url.pathname.slice('/media/'.length)))
     }
     return handler.fetch(request)
+  },
+
+  /** Emails to info@ronialogistics.com (Cloudflare Email Routing → Send to a Worker) */
+  async email(message: ForwardableEmailMessage, env: Cloudflare.Env) {
+    try {
+      await handleIncomingEmail(message, env)
+    } catch (e) {
+      console.error('Incoming email failed', e)
+    }
+    await forwardCopy(message, env)
   },
 }

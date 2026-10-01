@@ -32,7 +32,7 @@ function Dashboard() {
           className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-sky-200 bg-sky-50 px-5 py-3 text-sm text-sky-900 hover:bg-sky-100"
         >
           <span>
-            💬 <b>{d.unreadMessages}</b> new website message{d.unreadMessages === 1 ? '' : 's'} (chat or contact form)
+            💬 <b>{d.unreadMessages}</b> new message{d.unreadMessages === 1 ? '' : 's'} (chat, contact form or email)
           </span>
           <span className="font-semibold">Open inbox →</span>
         </Link>

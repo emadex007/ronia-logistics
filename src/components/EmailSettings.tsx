@@ -77,6 +77,33 @@ export function EmailSettings({ v, set, unsaved }: { v: (k: string) => string; s
         {unsaved && <p className="text-xs font-semibold text-amber-700">Click “Save changes” before sending a test so the new settings are used.</p>}
       </Section>
 
+      <Section
+        title="Receive emails in Messages"
+        hint="Emails sent to your contact address (e.g. info@ronialogistics.com) appear in Admin → Messages, where staff can read and reply."
+      >
+        <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-600">
+          <li>
+            Cloudflare dashboard → your domain → <b>Email</b> → <b>Email Routing</b> → turn it on (Cloudflare adds the records).
+          </li>
+          <li>
+            <b>Routing rules</b> → <b>Create address</b> → <code className="rounded bg-slate-100 px-1">{(v('email') || 'info@ronialogistics.com').split('@')[0]}</code> →
+            action <b>Send to a Worker</b> → <b>ronia-logistics</b>.
+          </li>
+          <li>Send an email to that address from your Gmail — it shows up in Messages within seconds.</li>
+        </ol>
+        <TextField
+          label="Also forward a copy to (optional)"
+          value={v('forward_email_to')}
+          onChange={set('forward_email_to')}
+          placeholder="you@gmail.com"
+          hint="Keeps a backup copy in a normal inbox. Add it first under Email Routing → Destination addresses and click the confirmation link Cloudflare emails you."
+        />
+        <p className="text-xs text-slate-500">
+          Replies you send from Messages come from your “Send emails from” address with your contact email as the reply address, so the customer's answer comes back into
+          Messages too.
+        </p>
+      </Section>
+
       <Section title="Send a test email">
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-[240px] flex-1">

@@ -6,7 +6,7 @@ import { emailSettings, escapeHtml, layout, notifyOffice, sendEmail, siteUrl, te
 
 export type Conversation = {
   id: number
-  source: 'chat' | 'form'
+  source: 'chat' | 'form' | 'email'
   name: string
   phone: string | null
   email: string | null
@@ -18,7 +18,8 @@ export type Conversation = {
   created_at: string
   last_body?: string | null
 }
-export type ChatMessage = { id: number; sender: 'visitor' | 'staff'; body: string; created_at: string; staff_name?: string | null }
+export type ChatMessage = { id: number; sender: 'visitor' | 'staff'; body: string; created_at: string; staff_name?: string | null; attachments?: string | null }
+export type Attachment = { name: string; key: string; size: number; type: string }
 
 const clip = (v: unknown, n: number) => String(v ?? '').trim().slice(0, n)
 
@@ -201,7 +202,7 @@ export const getConversation = createServerFn({ method: 'GET' })
     )
     if (!conv) return null
     const messages = await all<ChatMessage>(
-      `SELECT m.id, m.sender, m.body, m.created_at, u.full_name AS staff_name
+      `SELECT m.id, m.sender, m.body, m.created_at, m.attachments, u.full_name AS staff_name
          FROM conversation_messages m LEFT JOIN users u ON u.id = m.staff_id
         WHERE m.conversation_id = ? ORDER BY m.id`,
       conv.id,
@@ -210,16 +211,47 @@ export const getConversation = createServerFn({ method: 'GET' })
     return { conv, messages }
   })
 
+async function emailStaffMessage(
+  conv: { id: number; source: string; name: string; email: string; subject: string | null; email_message_id?: string | null },
+  body: string,
+  staffName: string,
+  isFirst = false,
+) {
+  const s = await emailSettings()
+  const company = s.company_name || 'Ronia Logistics'
+  const baseSubject = conv.subject || `Your message to ${company}`
+  const subject = conv.source === 'chat' ? `New reply from ${company}` : isFirst ? baseSubject : `Re: ${baseSubject.replace(/^((re|fwd?):\s*)+/i, '')}`
+  const ref = conv.email_message_id?.trim()
+  return sendEmail(s, {
+    to: conv.email,
+    subject,
+    // Replies come back to the main address, which Email Routing delivers into Admin → Messages
+    replyTo: s.email || undefined,
+    headers: ref ? { 'In-Reply-To': ref, References: ref } : undefined,
+    html: layout(s, {
+      title: `Hello ${conv.name.split(' ')[0]},`,
+      body: textToHtml(body) + `<p style="margin:14px 0 0;color:#64748b">— ${escapeHtml(staffName.split(' ')[0])}, ${escapeHtml(company)}</p>`,
+      button: conv.source === 'chat' ? { label: 'Continue the chat', url: siteUrl(s) } : undefined,
+      footerNote: conv.source === 'chat' ? undefined : 'You can reply to this email directly.',
+    }),
+  })
+}
+
 export const replyConversation = createServerFn({ method: 'POST' })
   .validator((d: { id: number; body: string }) => d)
   .handler(async ({ data }) => {
     const me = await requirePerm('inbox')
-    const body = clip(data.body, 4000)
+    const body = clip(data.body, 8000)
     if (!body) return { ok: false as const, error: 'Type a reply first.' }
-    const conv = await first<{ id: number; source: string; name: string; email: string | null; subject: string | null; visitor_seen_at: string | null }>(
-      'SELECT id, source, name, email, subject, visitor_seen_at FROM conversations WHERE id = ?',
-      Number(data.id),
-    )
+    const conv = await first<{
+      id: number
+      source: string
+      name: string
+      email: string | null
+      subject: string | null
+      visitor_seen_at: string | null
+      email_message_id: string | null
+    }>('SELECT id, source, name, email, subject, visitor_seen_at, email_message_id FROM conversations WHERE id = ?', Number(data.id))
     if (!conv) return { ok: false as const, error: 'Conversation not found.' }
     const now = nowIso()
     await run(
@@ -237,25 +269,41 @@ export const replyConversation = createServerFn({ method: 'POST' })
       conv.id,
     )
 
-    // Email the reply: always for contact-form messages; for chats only if the visitor has left the website (not seen in 2 min)
+    // Email the reply: always for emails & contact-form messages; for chats only if the visitor has left the website (not seen in 2 min)
     let emailed: boolean | null = null
     const away = !conv.visitor_seen_at || Date.now() - Date.parse(conv.visitor_seen_at) > 2 * 60 * 1000
-    if (conv.email && (conv.source === 'form' || away)) {
-      const s = await emailSettings()
-      const res = await sendEmail(s, {
-        to: conv.email,
-        subject: conv.source === 'form' ? `Re: ${conv.subject || 'Your message to ' + (s.company_name || 'Ronia Logistics')}` : `New reply from ${s.company_name || 'Ronia Logistics'}`,
-        replyTo: s.notify_email?.split(/[,;\s]+/)[0] || s.email || undefined,
-        html: layout(s, {
-          title: `Hello ${conv.name.split(' ')[0]},`,
-          body: textToHtml(body) + `<p style="margin:14px 0 0;color:#64748b">— ${escapeHtml(me.full_name.split(' ')[0])}, ${escapeHtml(s.company_name || 'Ronia Logistics')}</p>`,
-          button: conv.source === 'chat' ? { label: 'Continue the chat', url: siteUrl(s) } : undefined,
-          footerNote: conv.source === 'form' ? 'You can reply to this email directly.' : undefined,
-        }),
-      })
-      emailed = res.ok
+    if (conv.email && (conv.source !== 'chat' || away)) {
+      emailed = (await emailStaffMessage({ ...conv, email: conv.email }, body, me.full_name)).ok
     }
     return { ok: true as const, emailed }
+  })
+
+/** Start a brand-new email to anyone from the admin. */
+export const composeEmail = createServerFn({ method: 'POST' })
+  .validator((d: { to: string; name?: string; subject: string; body: string }) => d)
+  .handler(async ({ data }) => {
+    const me = await requirePerm('inbox')
+    const to = clip(data.to, 160).toLowerCase()
+    const subject = clip(data.subject, 200)
+    const body = clip(data.body, 8000)
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return { ok: false as const, error: 'Enter a valid email address.' }
+    if (!subject || !body) return { ok: false as const, error: 'Add a subject and a message.' }
+    const name = clip(data.name, 120) || to.split('@')[0]
+    const now = nowIso()
+    const res = await run(
+      "INSERT INTO conversations (source, name, email, subject, status, assigned_to, last_message_at) VALUES ('email', ?, ?, ?, 'open', ?, ?)",
+      name,
+      to,
+      subject,
+      me.id,
+      now,
+    )
+    const id = Number(res.meta.last_row_id)
+    await run('INSERT INTO conversation_messages (conversation_id, sender, staff_id, body, created_at) VALUES (?, ?, ?, ?, ?)', id, 'staff', me.id, body, now)
+    const sent = await emailStaffMessage({ id, source: 'email', name, email: to, subject }, body, me.full_name, true)
+    await audit(me.id, 'inbox.compose', 'conversation', id, { to })
+    if (!sent.ok) return { ok: false as const, error: `Saved, but the email could not be sent: ${sent.error}`, id }
+    return { ok: true as const, id }
   })
 
 export const setConversationStatus = createServerFn({ method: 'POST' })

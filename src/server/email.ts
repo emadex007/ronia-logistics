@@ -58,6 +58,8 @@ export type EmailInput = {
   subject: string
   html: string
   replyTo?: string
+  /** Extra headers, e.g. In-Reply-To / References so replies thread in Gmail */
+  headers?: Record<string, string>
   /** For the notifications log */
   shipmentId?: number
   merchantId?: number
@@ -77,7 +79,7 @@ export async function sendEmail(s: S, e: EmailInput): Promise<{ ok: boolean; err
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from, to, subject: e.subject, html: e.html, ...(e.replyTo ? { reply_to: e.replyTo } : {}) }),
+        body: JSON.stringify({ from, to, subject: e.subject, html: e.html, ...(e.replyTo ? { reply_to: e.replyTo } : {}), ...(e.headers ? { headers: e.headers } : {}) }),
       })
       ok = res.ok
       if (!ok) {

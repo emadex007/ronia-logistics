@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { getConversation, listConversations, replyConversation, setConversationStatus, type ChatMessage, type Conversation } from '~/fns/messages'
+import {
+  composeEmail,
+  getConversation,
+  listConversations,
+  replyConversation,
+  setConversationStatus,
+  type Attachment,
+  type ChatMessage,
+  type Conversation,
+} from '~/fns/messages'
 import { Alert, PageHeader } from '~/components/ui'
 import { dateTime } from '~/lib/format'
 
@@ -17,6 +26,21 @@ export const Route = createFileRoute('/admin/inbox')({
   head: () => ({ meta: [{ title: 'Messages — Ronia Logistics' }] }),
   component: InboxPage,
 })
+
+const SOURCE: Record<string, { icon: string; label: string }> = {
+  chat: { icon: '💬', label: 'Website chat' },
+  form: { icon: '📝', label: 'Contact form' },
+  email: { icon: '✉️', label: 'Email' },
+}
+
+function parseFiles(v?: string | null): Attachment[] {
+  try {
+    return v ? (JSON.parse(v) as Attachment[]) : []
+  } catch {
+    return []
+  }
+}
+const kb = (n: number) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`)
 
 const waLink = (phone: string) => {
   let d = phone.replace(/[^0-9]/g, '')
@@ -36,6 +60,7 @@ function InboxPage() {
   const [error, setError] = useState('')
   const [note, setNote] = useState('')
   const scroller = useRef<HTMLDivElement>(null)
+  const [composing, setComposing] = useState(false)
 
   async function loadList() {
     setList(await listConversations({ data: { status, q } }))
@@ -95,7 +120,25 @@ function InboxPage() {
 
   return (
     <>
-      <PageHeader title="Messages" subtitle="Live chats and contact-form messages from the website." />
+      <PageHeader
+        title="Messages"
+        subtitle="Website chats, contact-form messages and emails — reply to all of them from here."
+        actions={
+          <button className="btn btn-accent" onClick={() => setComposing(true)}>
+            ✉️ New email
+          </button>
+        }
+      />
+      {composing && (
+        <ComposeEmail
+          onClose={() => setComposing(false)}
+          onSent={async (id) => {
+            setComposing(false)
+            await loadList()
+            navigate({ search: { status: search.status, id } })
+          }}
+        />
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[340px_1fr]">
         {/* List */}
@@ -124,7 +167,7 @@ function InboxPage() {
                 className={`block w-full border-b border-slate-100 px-4 py-3 text-left hover:bg-slate-50 ${search.id === m.id ? 'bg-sky-50' : ''}`}
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-base">{m.source === 'chat' ? '💬' : '✉️'}</span>
+                  <span className="text-base" title={SOURCE[m.source]?.label}>{SOURCE[m.source]?.icon ?? '✉️'}</span>
                   <span className={`truncate ${m.unread_admin ? 'font-bold text-brand-900' : 'font-medium text-slate-700'}`}>{m.name}</span>
                   {m.unread_admin > 0 && (
                     <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1.5 text-[11px] font-bold text-white">{m.unread_admin}</span>
@@ -153,7 +196,7 @@ function InboxPage() {
                   </button>
                   <p className="font-display text-lg font-bold text-brand-900">{c.name}</p>
                   <p className="text-xs text-slate-500">
-                    {c.source === 'chat' ? 'Website chat' : 'Contact form'} · started {dateTime(c.created_at)}
+                    {SOURCE[c.source]?.label ?? 'Message'} · started {dateTime(c.created_at)}
                     {c.page_url ? ` · from ${c.page_url}` : ''}
                   </p>
                   {c.subject && <p className="mt-1 text-sm font-semibold text-slate-700">Subject: {c.subject}</p>}
@@ -192,6 +235,21 @@ function InboxPage() {
                       }`}
                     >
                       {m.body}
+                      {parseFiles(m.attachments).length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5 whitespace-normal">
+                          {parseFiles(m.attachments).map((f) => (
+                            <a
+                              key={f.key}
+                              href={`/media/${f.key}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200 hover:bg-slate-200"
+                            >
+                              📎 {f.name} <span className="text-slate-400">({kb(f.size)})</span>
+                            </a>
+                          ))}
+                        </div>
+                      )}
                       <p className={`mt-1 text-[10px] ${m.sender === 'staff' ? 'text-white/60' : 'text-slate-400'}`}>
                         {m.sender === 'staff' ? `${m.staff_name ?? 'Staff'} · ` : ''}
                         {dateTime(m.created_at)}
@@ -240,5 +298,68 @@ function InboxPage() {
         </div>
       </div>
     </>
+  )
+}
+
+function ComposeEmail({ onClose, onSent }: { onClose: () => void; onSent: (id: number) => void }) {
+  const [f, setF] = useState({ to: '', name: '', subject: '', body: '' })
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const up = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value })
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={onClose}>
+      <form
+        className="card w-full max-w-lg space-y-3 p-5"
+        onClick={(e) => e.stopPropagation()}
+        onSubmit={async (e) => {
+          e.preventDefault()
+          setBusy(true)
+          setError('')
+          const res = await composeEmail({ data: f }).catch((err) => ({ ok: false as const, error: String(err?.message ?? err), id: undefined }))
+          setBusy(false)
+          if (!res.ok) {
+            setError(res.error)
+            if (res.id) onSent(res.id)
+            return
+          }
+          onSent(res.id)
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <p className="font-display text-lg font-bold text-brand-900">New email</p>
+          <button type="button" className="rounded px-2 text-xl text-slate-400 hover:text-slate-700" onClick={onClose}>
+            ×
+          </button>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className="label">To (email) *</span>
+            <input className="input" type="email" required value={f.to} onChange={up('to')} placeholder="customer@gmail.com" />
+          </label>
+          <label className="block">
+            <span className="label">Their name</span>
+            <input className="input" value={f.name} onChange={up('name')} />
+          </label>
+        </div>
+        <label className="block">
+          <span className="label">Subject *</span>
+          <input className="input" required value={f.subject} onChange={up('subject')} />
+        </label>
+        <label className="block">
+          <span className="label">Message *</span>
+          <textarea className="input" rows={7} required value={f.body} onChange={up('body')} />
+        </label>
+        {error && <Alert>{error}</Alert>}
+        <p className="text-xs text-slate-500">Sent with your company logo. When they reply, it comes back here in Messages.</p>
+        <div className="flex justify-end gap-2">
+          <button type="button" className="btn btn-ghost" onClick={onClose}>
+            Cancel
+          </button>
+          <button className="btn btn-accent" disabled={busy}>
+            {busy ? 'Sending…' : 'Send email'}
+          </button>
+        </div>
+      </form>
+    </div>
   )
 }
