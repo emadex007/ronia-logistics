@@ -3,6 +3,7 @@ import { all, first, run, audit, db, nowIso } from '~/server/db'
 import { hashPassword, requirePerm } from '~/server/auth'
 import { getBalance, getMerchantProducts, getMovements, getPayouts, getTotals } from '~/server/stock'
 import type { Merchant, MovementType, Product, Shipment } from '~/lib/types'
+import { emailSettings, escapeHtml, notifyPerson, siteUrl } from '~/server/email'
 
 
 export type MerchantRow = Merchant & {
@@ -315,5 +316,19 @@ export const recordPayout = createServerFn({ method: 'POST' })
       `Ronia Logistics paid you ₦${(amount / 100).toLocaleString('en-NG')}${data.reference ? ` (ref ${data.reference})` : ''}.`,
     )
     await audit(me.id, 'merchant.payout', 'merchant', merchantId, { amount, id: Number(res.meta.last_row_id) })
+    const m = await first<{ business_name: string; email: string | null }>('SELECT business_name, email FROM merchants WHERE id = ?', merchantId)
+    if (m?.email) {
+      const st = await emailSettings()
+      await notifyPerson('merchants', {
+        to: m.email,
+        merchantId,
+        subject: `Payment sent: ₦${(amount / 100).toLocaleString('en-NG')}`,
+        title: 'We have paid you 💸',
+        body:
+          `<p style="margin:0 0 12px">Hello ${escapeHtml(m.business_name)}, we have paid you <b>₦${(amount / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}</b> for your sales.</p>` +
+          (data.reference?.trim() ? `<p style="margin:0">Reference: <b>${escapeHtml(data.reference.trim())}</b></p>` : ''),
+        button: { label: 'View your statement', url: `${siteUrl(st)}/merchant` },
+      })
+    }
     return { ok: true as const }
   })

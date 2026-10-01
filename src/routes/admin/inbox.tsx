@@ -34,6 +34,7 @@ function InboxPage() {
   const [reply, setReply] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [note, setNote] = useState('')
   const scroller = useRef<HTMLDivElement>(null)
 
   async function loadList() {
@@ -56,6 +57,7 @@ function InboxPage() {
   useEffect(() => {
     setReply('')
     setError('')
+    setNote('')
     loadThread()
     if (!search.id) return
     const t = setInterval(() => loadThread(), 8000)
@@ -74,7 +76,11 @@ function InboxPage() {
     const res = await replyConversation({ data: { id: thread.conv.id, body: reply } })
     setBusy(false)
     if (!res.ok) return setError(res.error)
+    setError('')
     setReply('')
+    if (res.emailed === true) setNote(`Reply also sent by email to ${thread.conv.email}.`)
+    else if (res.emailed === false) setError('Reply saved, but the email could not be sent. Check Website → Emails.')
+    else setNote('')
     await Promise.all([loadThread(thread.conv.id), loadList()])
   }
 
@@ -200,28 +206,33 @@ function InboxPage() {
                   <Alert>{error}</Alert>
                 </div>
               )}
-              {c.source === 'chat' ? (
+              {note && <p className="px-4 pt-3 text-xs font-medium text-emerald-700">✓ {note}</p>}
+              {c.source === 'chat' || c.email ? (
                 <form onSubmit={send} className="flex gap-2 border-t border-slate-100 p-3">
                   <textarea
                     className="input flex-1"
-                    rows={2}
-                    placeholder="Type your reply — the customer sees it in the chat window…"
+                    rows={c.source === 'chat' ? 2 : 4}
+                    placeholder={
+                      c.source === 'chat'
+                        ? `Type your reply — they see it in the chat window${c.email ? ' (and by email if they have left the website)' : ''}…`
+                        : `Type your reply — it will be emailed to ${c.email}…`
+                    }
                     value={reply}
                     onChange={(e) => setReply(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
+                      if (c.source === 'chat' && e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault()
                         e.currentTarget.form?.requestSubmit()
                       }
                     }}
                   />
                   <button className="btn btn-accent self-end" disabled={busy || !reply.trim()}>
-                    Send
+                    {busy ? 'Sending…' : c.source === 'chat' ? 'Send' : 'Send email'}
                   </button>
                 </form>
               ) : (
                 <div className="border-t border-slate-100 p-4 text-xs text-slate-500">
-                  This came from the contact form, so reply by phone, WhatsApp or email using the buttons above. Click <b>Mark as done</b> when it's handled.
+                  This person didn't leave an email, so reply by phone or WhatsApp using the buttons above. Click <b>Mark as done</b> when it's handled.
                 </div>
               )}
             </>

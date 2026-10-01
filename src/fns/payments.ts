@@ -4,6 +4,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { env } from 'cloudflare:workers'
 import { first, run, audit, nowIso, todayLagos } from '~/server/db'
 import type { Shipment } from '~/lib/types'
+import { emailSettings, escapeHtml, notifyOffice, siteUrl } from '~/server/email'
 
 const API = 'https://api.paystack.co'
 
@@ -114,6 +115,13 @@ export const verifyOnlinePayment = createServerFn({ method: 'GET' })
         `₦${(payment.amount / 100).toLocaleString('en-NG')} received via Paystack.`,
       )
       await audit(null, 'payment.paystack_success', 'shipment', shipment.id, { reference, amount: payment.amount })
+      const st = await emailSettings()
+      await notifyOffice({
+        subject: `💳 Online payment received: ${shipment.tracking_code}`,
+        title: 'Online payment received',
+        body: `<p style="margin:0">₦${(payment.amount / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })} was paid with Paystack for <b>${escapeHtml(shipment.tracking_code)}</b> (${escapeHtml(shipment.sender_name)} → ${escapeHtml(shipment.receiver_name)}).<br>Reference: ${escapeHtml(reference)}</p>`,
+        button: { label: 'Open shipment', url: `${siteUrl(st)}/admin/shipments/${shipment.id}` },
+      })
     }
     return { ok: true as const, code, amount: payment.amount }
   })

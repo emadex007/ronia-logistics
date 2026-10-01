@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { all, first, run, audit, nowIso, todayLagos, db } from '~/server/db'
 import { requirePerm } from '~/server/auth'
 import { statusLabel } from '~/lib/format'
+import { emailSettings, escapeHtml, notifyPerson, siteUrl } from '~/server/email'
 import type { Shipment, ShipmentEvent, ShipmentStatus } from '~/lib/types'
 
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
@@ -18,18 +19,57 @@ async function newTrackingCode() {
   throw new Error('Could not generate a tracking code, please try again.')
 }
 
-/** Queue customer notifications (sent by the notifications worker in a later phase) + a dashboard alert. */
-async function queueNotifications(s: Pick<Shipment, 'id' | 'tracking_code' | 'sender_phone' | 'receiver_phone' | 'sender_email' | 'receiver_email'>, status: ShipmentStatus, location?: string | null) {
+type NotifyShipment = Pick<Shipment, 'id' | 'tracking_code' | 'sender_phone' | 'receiver_phone' | 'sender_email' | 'receiver_email'> &
+  Partial<Pick<Shipment, 'sender_name' | 'receiver_name' | 'destination_city'>>
+
+const STATUS_LINES: Partial<Record<ShipmentStatus, string>> = {
+  pending: 'Your shipment has been booked and is waiting for pickup.',
+  received: 'We have received your package at our office and it is registered for delivery.',
+  in_transit: 'Your package is on its way.',
+  arrived_hub: 'Your package has arrived at our hub.',
+  out_for_delivery: 'Your package is out for delivery today — please keep your phone close.',
+  delivered: 'Your package has been delivered. Thank you for choosing us!',
+  returned: 'This package is being returned to the sender.',
+  cancelled: 'This shipment has been cancelled. Please contact us if you have any questions.',
+}
+
+/** Email sender & receiver about a status change, queue SMS for later, and add a dashboard alert. */
+async function queueNotifications(s: NotifyShipment, status: ShipmentStatus, location?: string | null, isNew = false) {
   const title = `${s.tracking_code}: ${statusLabel(status)}`
   const message = `Ronia Logistics: your package ${s.tracking_code} is now "${statusLabel(status)}"${location ? ` — ${location}` : ''}. Track it on our website.`
-  const stmts = [
+  await db().batch([
     db().prepare('INSERT INTO notifications (channel, recipient, shipment_id, title, message) VALUES (?, ?, ?, ?, ?)').bind('sms', s.receiver_phone, s.id, title, message),
     db().prepare('INSERT INTO notifications (channel, recipient, shipment_id, title, message) VALUES (?, ?, ?, ?, ?)').bind('sms', s.sender_phone, s.id, title, message),
     db().prepare("INSERT INTO notifications (channel, shipment_id, title, message, status) VALUES ('dashboard', ?, ?, ?, 'queued')").bind(s.id, title, message),
-  ]
-  if (s.receiver_email) stmts.push(db().prepare('INSERT INTO notifications (channel, recipient, shipment_id, title, message) VALUES (?, ?, ?, ?, ?)').bind('email', s.receiver_email, s.id, title, message))
-  if (s.sender_email) stmts.push(db().prepare('INSERT INTO notifications (channel, recipient, shipment_id, title, message) VALUES (?, ?, ?, ?, ?)').bind('email', s.sender_email, s.id, title, message))
-  await db().batch(stmts)
+  ])
+
+  const emails = [...new Set([s.sender_email, s.receiver_email].map((e) => e?.trim().toLowerCase()).filter(Boolean) as string[])]
+  if (!emails.length) return
+  const st = await emailSettings()
+  const url = `${siteUrl(st)}/track?code=${encodeURIComponent(s.tracking_code)}`
+  const rows = [
+    ['Tracking number', `<b style="font-family:monospace;font-size:16px">${escapeHtml(s.tracking_code)}</b>`],
+    ['Status', `<b>${escapeHtml(statusLabel(status))}</b>`],
+    location ? ['Location', escapeHtml(location)] : null,
+    s.sender_name ? ['From', escapeHtml(s.sender_name)] : null,
+    s.receiver_name ? ['To', escapeHtml(s.receiver_name) + (s.destination_city ? `, ${escapeHtml(s.destination_city)}` : '')] : null,
+  ].filter(Boolean) as string[][]
+  const body =
+    `<p style="margin:0 0 14px">${escapeHtml(STATUS_LINES[status] ?? `Your package is now "${statusLabel(status)}".`)}</p>` +
+    `<table cellpadding="0" cellspacing="0" style="width:100%;border:1px solid #e2e8f0;border-radius:10px;font-size:14px">${rows
+      .map(([k, v]) => `<tr><td style="padding:8px 12px;color:#64748b;width:40%">${k}</td><td style="padding:8px 12px">${v}</td></tr>`)
+      .join('')}</table>`
+  for (const to of emails) {
+    await notifyPerson('customers', {
+      to,
+      subject: isNew ? `Your package ${s.tracking_code} has been booked` : `${s.tracking_code}: ${statusLabel(status)}`,
+      title: isNew ? 'Package booked ✅' : `Update: ${statusLabel(status)}`,
+      body,
+      button: { label: 'Track your package', url },
+      shipmentId: s.id,
+      footerNote: 'You are getting this because your email was added to this shipment.',
+    })
+  }
 }
 
 export type ShipmentFilters = { q?: string; status?: string; page?: number }
@@ -201,9 +241,20 @@ export const createShipment = createServerFn({ method: 'POST' })
     }
 
     await queueNotifications(
-      { id, tracking_code: code, sender_phone: data.sender_phone, receiver_phone: data.receiver_phone, sender_email: data.sender_email || null, receiver_email: data.receiver_email || null },
+      {
+        id,
+        tracking_code: code,
+        sender_name: data.sender_name,
+        receiver_name: data.receiver_name,
+        destination_city: data.destination_city,
+        sender_phone: data.sender_phone,
+        receiver_phone: data.receiver_phone,
+        sender_email: data.sender_email || null,
+        receiver_email: data.receiver_email || null,
+      },
       status,
       `${origin} office`,
+      true,
     )
     await audit(user.id, 'shipment.create', 'shipment', id, { code })
     return { ok: true as const, id, code }

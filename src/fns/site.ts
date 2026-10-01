@@ -3,6 +3,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { env } from 'cloudflare:workers'
 import { all, audit, db } from '~/server/db'
 import { requirePerm } from '~/server/auth'
+import { emailReady, emailSettings, layout, sendEmail } from '~/server/email'
 import { COLOR_KEYS, EDITABLE_KEYS, HEX, NUMBER_KEYS } from '~/lib/site'
 import type { Settings } from '~/lib/types'
 
@@ -180,4 +181,31 @@ export const importSite = createServerFn({ method: 'POST' })
     await writeSettings(res.entries)
     await audit(me.id, 'site.import', 'settings', undefined, { keys: res.entries.length, media: uploaded, from: payload.exported_at })
     return { ok: true as const, settings: res.entries.length, media: uploaded, skipped: payload.skipped ?? [] }
+  })
+
+/** Email setup status + test send, used by Website → Emails. */
+export const getEmailStatus = createServerFn({ method: 'GET' }).handler(async () => {
+  await requireSiteEditor()
+  const recent = await all<{ recipient: string; title: string; status: string; error: string | null; created_at: string }>(
+    "SELECT recipient, title, status, error, created_at FROM notifications WHERE channel = 'email' AND status IN ('sent','failed') ORDER BY id DESC LIMIT 15",
+  )
+  return { keySet: emailReady(), recent }
+})
+
+export const sendTestEmail = createServerFn({ method: 'POST' })
+  .validator((d: { to: string }) => d)
+  .handler(async ({ data }) => {
+    const me = await requireSiteEditor()
+    const s = await emailSettings()
+    const to = data.to?.trim() || s.notify_email || s.email || me.email
+    const res = await sendEmail(s, {
+      to,
+      subject: `Test email from ${s.company_name || 'Ronia Logistics'}`,
+      html: layout(s, {
+        title: 'Emails are working ✅',
+        body: `<p style="margin:0">This is a test sent by ${me.full_name}. Customers, merchants and the office will now get email updates from the website.</p>`,
+        button: { label: 'Open the website', url: (s.site_url || 'https://ronialogistics.com').replace(/\/+$/, '') },
+      }),
+    })
+    return res.ok ? { ok: true as const, to } : { ok: false as const, error: res.error ?? 'Could not send.' }
   })

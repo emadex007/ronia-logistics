@@ -2,6 +2,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { all, first, run, nowIso, audit } from '~/server/db'
 import { requirePerm } from '~/server/auth'
+import { emailSettings, escapeHtml, layout, notifyOffice, sendEmail, siteUrl, textToHtml } from '~/server/email'
 
 export type Conversation = {
   id: number
@@ -37,6 +38,22 @@ async function addVisitorMessage(convId: number, body: string) {
   )
 }
 
+async function alertOffice(convId: number, kind: 'chat' | 'form', who: { name: string; phone?: string; email?: string; subject?: string }, message: string) {
+  const s = await emailSettings()
+  const details = [who.phone && `📞 ${escapeHtml(who.phone)}`, who.email && `✉️ ${escapeHtml(who.email)}`].filter(Boolean).join('<br>')
+  await notifyOffice({
+    subject: kind === 'chat' ? `💬 New website chat from ${who.name}` : `✉️ New message from ${who.name}${who.subject ? `: ${who.subject}` : ''}`,
+    title: kind === 'chat' ? 'New chat on the website' : 'New contact-form message',
+    body:
+      `<p style="margin:0 0 6px"><b>${escapeHtml(who.name)}</b></p>` +
+      (details ? `<p style="margin:0 0 14px;color:#475569">${details}</p>` : '') +
+      (who.subject ? `<p style="margin:0 0 8px"><b>Subject:</b> ${escapeHtml(who.subject)}</p>` : '') +
+      `<div style="background:#f8fafc;border-left:4px solid #cbd5e1;padding:12px 14px;border-radius:6px">${textToHtml(message)}</div>`,
+    button: { label: kind === 'chat' ? 'Reply in the admin' : 'Open in the admin', url: `${siteUrl(s)}/admin/inbox?id=${convId}` },
+    replyTo: who.email || undefined,
+  })
+}
+
 /* ---------------- Public (website visitors) ---------------- */
 
 type ContactInput = { name: string; phone?: string; email?: string; subject?: string; message: string; page?: string; website?: string }
@@ -60,7 +77,9 @@ export const sendContactForm = createServerFn({ method: 'POST' })
       clip(data.subject, 160) || null,
       clip(data.page, 300) || null,
     )
-    await addVisitorMessage(Number(res.meta.last_row_id), message)
+    const convId = Number(res.meta.last_row_id)
+    await addVisitorMessage(convId, message)
+    await alertOffice(convId, 'form', { name, phone, email, subject: clip(data.subject, 160) }, message)
     return { ok: true as const }
   })
 
@@ -75,21 +94,27 @@ export const chatStart = createServerFn({ method: 'POST' })
     if (!phone && !clip(data.email, 160)) return { ok: false as const, error: 'Please add a phone number or email so we can reach you.' }
     const token = newToken()
     const res = await run(
-      'INSERT INTO conversations (source, visitor_token, name, phone, email, page_url) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO conversations (source, visitor_token, name, phone, email, page_url, visitor_seen_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
       'chat',
       token,
       name,
       phone || null,
       clip(data.email, 160) || null,
       clip(data.page, 300) || null,
+      nowIso(),
     )
-    await addVisitorMessage(Number(res.meta.last_row_id), body)
+    const convId = Number(res.meta.last_row_id)
+    await addVisitorMessage(convId, body)
+    await alertOffice(convId, 'chat', { name, phone, email: clip(data.email, 160) }, body)
     return { ok: true as const, token }
   })
 
 async function convByToken(token: string) {
   if (!token || token.length < 20) return null
-  return first<{ id: number; name: string; status: string }>('SELECT id, name, status FROM conversations WHERE visitor_token = ?', token)
+  return first<{ id: number; name: string; status: string; phone: string | null; email: string | null; last_message_at: string }>(
+    'SELECT id, name, status, phone, email, last_message_at FROM conversations WHERE visitor_token = ?',
+    token,
+  )
 }
 
 export const chatSend = createServerFn({ method: 'POST' })
@@ -106,7 +131,10 @@ export const chatSend = createServerFn({ method: 'POST' })
       new Date(Date.now() - 10 * 60 * 1000).toISOString(),
     )
     if ((recent?.n ?? 0) >= 20) return { ok: false as const, error: 'Please wait a moment before sending more messages.' }
+    // Chat went quiet for 30+ minutes (or was closed) → email the office again so the new message isn't missed
+    const quiet = conv.status === 'closed' || Date.now() - Date.parse(conv.last_message_at) > 30 * 60 * 1000
     await addVisitorMessage(conv.id, body)
+    if (quiet) await alertOffice(conv.id, 'chat', { name: conv.name, phone: conv.phone ?? undefined, email: conv.email ?? undefined }, body)
     return { ok: true as const }
   })
 
@@ -121,7 +149,7 @@ export const chatPoll = createServerFn({ method: 'GET' })
         WHERE m.conversation_id = ? ORDER BY m.id DESC LIMIT 100`,
       conv.id,
     )
-    await run('UPDATE conversations SET unread_visitor = 0 WHERE id = ?', conv.id)
+    await run('UPDATE conversations SET unread_visitor = 0, visitor_seen_at = ? WHERE id = ?', nowIso(), conv.id)
     // Only show staff first names to visitors
     return {
       name: conv.name,
@@ -188,7 +216,10 @@ export const replyConversation = createServerFn({ method: 'POST' })
     const me = await requirePerm('inbox')
     const body = clip(data.body, 4000)
     if (!body) return { ok: false as const, error: 'Type a reply first.' }
-    const conv = await first<{ id: number }>('SELECT id FROM conversations WHERE id = ?', Number(data.id))
+    const conv = await first<{ id: number; source: string; name: string; email: string | null; subject: string | null; visitor_seen_at: string | null }>(
+      'SELECT id, source, name, email, subject, visitor_seen_at FROM conversations WHERE id = ?',
+      Number(data.id),
+    )
     if (!conv) return { ok: false as const, error: 'Conversation not found.' }
     const now = nowIso()
     await run(
@@ -205,7 +236,26 @@ export const replyConversation = createServerFn({ method: 'POST' })
       me.id,
       conv.id,
     )
-    return { ok: true as const }
+
+    // Email the reply: always for contact-form messages; for chats only if the visitor has left the website (not seen in 2 min)
+    let emailed: boolean | null = null
+    const away = !conv.visitor_seen_at || Date.now() - Date.parse(conv.visitor_seen_at) > 2 * 60 * 1000
+    if (conv.email && (conv.source === 'form' || away)) {
+      const s = await emailSettings()
+      const res = await sendEmail(s, {
+        to: conv.email,
+        subject: conv.source === 'form' ? `Re: ${conv.subject || 'Your message to ' + (s.company_name || 'Ronia Logistics')}` : `New reply from ${s.company_name || 'Ronia Logistics'}`,
+        replyTo: s.notify_email?.split(/[,;\s]+/)[0] || s.email || undefined,
+        html: layout(s, {
+          title: `Hello ${conv.name.split(' ')[0]},`,
+          body: textToHtml(body) + `<p style="margin:14px 0 0;color:#64748b">— ${escapeHtml(me.full_name.split(' ')[0])}, ${escapeHtml(s.company_name || 'Ronia Logistics')}</p>`,
+          button: conv.source === 'chat' ? { label: 'Continue the chat', url: siteUrl(s) } : undefined,
+          footerNote: conv.source === 'form' ? 'You can reply to this email directly.' : undefined,
+        }),
+      })
+      emailed = res.ok
+    }
+    return { ok: true as const, emailed }
   })
 
 export const setConversationStatus = createServerFn({ method: 'POST' })

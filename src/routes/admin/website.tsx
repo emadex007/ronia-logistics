@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
 import { exportSite, getSiteSettings, importSite, saveSiteSettings } from '~/fns/site'
+import { EmailSettings } from '~/components/EmailSettings'
 import { Alert, PageHeader } from '~/components/ui'
 import { SocialLogo } from '~/components/SocialIcons'
 import { ColorField, ListEditor, MediaField, RangeField, Section, TextField } from '~/components/SiteEditorFields'
@@ -27,6 +28,7 @@ const TABS = [
   { id: 'contact', label: 'Contact & social' },
   { id: 'footer', label: 'Footer' },
   { id: 'receipts', label: 'Receipts' },
+  { id: 'emails', label: 'Emails' },
 ] as const
 type Tab = (typeof TABS)[number]['id']
 
@@ -579,6 +581,8 @@ function WebsiteEditor() {
             </div>
           </Section>
         )}
+
+        {tab === 'emails' && <EmailSettings v={v} set={set} unsaved={changed.some((k) => k.startsWith('email') || k === 'notify_email' || k === 'site_url')} />}
 
         {tab === 'receipts' && (
           <Section title="Receipts & tracking numbers">

@@ -3,6 +3,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { all, first, run, audit, db, nowIso } from '~/server/db'
 import { createSession, hashPassword, requirePerm, requireUser, STAFF_ROLES } from '~/server/auth'
 import type { Shipment } from '~/lib/types'
+import { emailSettings, escapeHtml, notifyOffice, notifyPerson, siteUrl } from '~/server/email'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -119,6 +120,24 @@ export const applyAsMerchant = createServerFn({ method: 'POST' })
       `${data.business_name.trim()} (${data.contact_name.trim()}, ${data.phone.trim()}) applied to become a merchant.`,
     )
     await audit(null, 'merchant.apply', 'merchant_application', Number(res.meta.last_row_id))
+    const st = await emailSettings()
+    await notifyOffice({
+      subject: `🏬 New merchant application: ${data.business_name.trim()}`,
+      title: 'New merchant application',
+      body:
+        `<p style="margin:0 0 10px"><b>${escapeHtml(data.business_name.trim())}</b> wants to become a merchant.</p>` +
+        `<p style="margin:0">Contact: ${escapeHtml(data.contact_name.trim())}<br>📞 ${escapeHtml(data.phone.trim())}<br>✉️ ${escapeHtml(email)}` +
+        (data.what_they_sell?.trim() ? `<br>Sells: ${escapeHtml(data.what_they_sell.trim())}` : '') +
+        `</p>`,
+      button: { label: 'Review application', url: `${siteUrl(st)}/admin/merchants` },
+      replyTo: email,
+    })
+    await notifyPerson('merchants', {
+      to: email,
+      subject: 'We received your merchant application',
+      title: `Thank you, ${data.contact_name.trim().split(' ')[0]}!`,
+      body: `<p style="margin:0 0 12px">We have received the application for <b>${escapeHtml(data.business_name.trim())}</b>. Our team will review it and email you as soon as it is approved.</p>`,
+    })
     return { ok: true as const }
   })
 
@@ -192,6 +211,17 @@ export const approveApplication = createServerFn({ method: 'POST' })
         .bind(app.email, merchantId, 'Merchant account approved', `Welcome to Ronia Logistics, ${app.business_name}! You can now sign in to your merchant portal.`),
     ])
     await audit(me.id, 'merchant.approve', 'merchant_application', app.id, { merchantId })
+    const st = await emailSettings()
+    await notifyPerson('merchants', {
+      to: app.email,
+      merchantId,
+      subject: 'Your merchant account is approved 🎉',
+      title: `Welcome, ${app.business_name}!`,
+      body:
+        `<p style="margin:0 0 12px">Your merchant account has been approved. You can now sign in to see your stock, sales, deliveries and payments.</p>` +
+        `<p style="margin:0">Sign in with <b>${escapeHtml(app.email)}</b> and the password you chose when you applied.</p>`,
+      button: { label: 'Sign in to your portal', url: `${siteUrl(st)}/merchant/login` },
+    })
     return { ok: true as const, merchantId }
   })
 
@@ -210,5 +240,14 @@ export const rejectApplication = createServerFn({ method: 'POST' })
       app.id,
     )
     await audit(me.id, 'merchant.reject', 'merchant_application', app.id, { reason: data.reason })
+    await notifyPerson('merchants', {
+      to: app.email,
+      subject: 'About your merchant application',
+      title: `Hello ${app.contact_name.split(' ')[0]},`,
+      body:
+        `<p style="margin:0 0 12px">Thank you for applying to become a merchant with us. Unfortunately we can't approve the application for <b>${escapeHtml(app.business_name)}</b> at this time.</p>` +
+        (data.reason?.trim() ? `<p style="margin:0 0 12px"><b>Reason:</b> ${escapeHtml(data.reason.trim())}</p>` : '') +
+        `<p style="margin:0">Please reply to this email or call us if you have any questions.</p>`,
+    })
     return { ok: true as const }
   })

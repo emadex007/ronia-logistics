@@ -1,3 +1,4 @@
 # Copy this file to .dev.vars for local development (never commit .dev.vars)
 # Get test keys from https://dashboard.paystack.com/#/settings/developers
 PAYSTACK_SECRET_KEY=sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+RESEND_API_KEY=
