@@ -188,6 +188,30 @@ function WebsiteEditor() {
                 />
               </div>
             </Section>
+            <Section title="Phone app" hint="How the app looks when customers, riders and merchants install the website on their phone.">
+              <div className="grid gap-6 md:grid-cols-[1fr_2fr]">
+                <MediaField
+                  label="App icon"
+                  value={v('app_icon_key')}
+                  onChange={set('app_icon_key')}
+                  kind="icon"
+                  aspect="aspect-square"
+                  hint="Square PNG, exactly 512×512, no transparent corners. Leave empty to use the built-in navy “R” icon."
+                />
+                <div className="space-y-3">
+                  <TextField
+                    label="Name under the icon"
+                    value={v('app_short_name')}
+                    onChange={set('app_short_name')}
+                    placeholder="Ronia"
+                    hint="Up to 12 letters — phones cut off longer names."
+                  />
+                  <p className="text-xs text-slate-500">
+                    The app uses your main brand colour for the top bar. Phones that already installed the app pick up a new icon after a day or two (or reinstall).
+                  </p>
+                </div>
+              </div>
+            </Section>
             <Section title="Logo & text size">
               <div className="grid gap-6 md:grid-cols-2">
                 <RangeField label="Logo height" value={v('logo_height')} onChange={set('logo_height')} min={24} max={120} hint="Header and footer. Dashboards use a smaller version." />

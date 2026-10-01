@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { Link } from '@tanstack/react-router'
 import { Logo } from './ui'
 import { ChatWidget } from './ChatWidget'
+import { InstallAppButton } from './InstallApp'
 import { SOCIAL_LABELS, SocialLogo, type SocialKey } from './SocialIcons'
 import { isDark, mediaUrl, SOCIALS } from '~/lib/site'
 import type { Settings } from '~/lib/types'
@@ -11,6 +12,7 @@ const NAV = [
   { to: '/', label: 'Home', exact: true },
   { to: '/services', label: 'Services' },
   { to: '/about', label: 'About' },
+  { to: '/book', label: 'Book a delivery' },
   { to: '/contact', label: 'Contact' },
 ] as const
 
@@ -88,6 +90,7 @@ export function SiteLayout({ settings, children }: { settings: Settings; childre
                 Merchant login
               </Link>
             </div>
+            <InstallAppButton className="btn-accent mt-2 w-full" />
           </nav>
         )}
       </header>
@@ -121,6 +124,11 @@ export function SiteLayout({ settings, children }: { settings: Settings; childre
                 Track a package
               </p>
               <FooterTrack />
+            </div>
+            <div className="mt-5">
+              <Link to="/app" className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold ring-1 ring-current/20 hover:bg-white/20">
+                📲 Get our app
+              </Link>
             </div>
           </div>
           <div className="text-sm">

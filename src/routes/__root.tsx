@@ -22,6 +22,11 @@ export const Route = createRootRoute({
         { title: `${name} — Track your package` },
         { name: 'description', content: st.seo_description || 'Same-day, interstate and international deliveries with live package tracking.' },
         { name: 'theme-color', content: st.primary_color || '#0b2545' },
+        // Installable phone app (Android "Install app", iPhone "Add to Home Screen")
+        { name: 'mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+        { name: 'apple-mobile-web-app-title', content: (st.app_short_name || name).slice(0, 12) },
         { property: 'og:title', content: name },
         { property: 'og:description', content: st.seo_description || st.tagline || '' },
         ...(st.hero_image ? [{ property: 'og:image', content: mediaUrl(st.hero_image) }] : []),
@@ -31,11 +36,12 @@ export const Route = createRootRoute({
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
         { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap' },
         { rel: 'stylesheet', href: appCss },
+        { rel: 'manifest', href: '/manifest.webmanifest' },
+        { rel: 'apple-touch-icon', href: st.app_icon_key ? mediaUrl(st.app_icon_key) : '/apple-touch-icon.png' },
         ...(st.favicon_key
           ? [
               { rel: 'icon', href: mediaUrl(st.favicon_key), type: iconType(st.favicon_key) },
               { rel: 'shortcut icon', href: mediaUrl(st.favicon_key) },
-              { rel: 'apple-touch-icon', href: mediaUrl(st.favicon_key) },
             ]
           : [{ rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' }]),
       ],
@@ -63,6 +69,11 @@ function RootDocument({ children }: { children: ReactNode }) {
       <body>
         {children}
         <Scripts />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}",
+          }}
+        />
       </body>
     </html>
   )

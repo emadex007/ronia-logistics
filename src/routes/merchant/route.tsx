@@ -1,6 +1,7 @@
 import { Link, Outlet, createFileRoute, redirect, useRouter } from '@tanstack/react-router'
 import { getMe, logout } from '~/fns/auth'
 import { Logo } from '~/components/ui'
+import { InstallAppButton } from '~/components/InstallApp'
 import { useSiteSettings } from '~/components/useSite'
 import { mediaUrl } from '~/lib/site'
 
@@ -35,6 +36,7 @@ function MerchantLayout() {
             <span className="hidden rounded-full bg-accent-500/20 px-2.5 py-0.5 text-xs font-semibold text-orange-200 sm:inline">Merchant portal</span>
           </div>
           <div className="flex items-center gap-3 text-sm">
+            <InstallAppButton className="rounded-lg bg-accent-500 px-3 py-1.5 text-xs font-semibold text-white" label="📲 Install app" />
             <span className="hidden text-slate-300 sm:inline">{user.full_name}</span>
             <button
               className="rounded-lg border border-white/20 px-3 py-1.5 text-xs font-semibold hover:bg-white/10"

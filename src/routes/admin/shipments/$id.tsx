@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Link, createFileRoute, notFound, useRouter, redirect } from '@tanstack/react-router'
 import { getShipment, markShipmentPaid, updateShipmentStatus } from '~/fns/shipments'
+import { assignRider, listRiders } from '~/fns/rider'
 import { Alert, Field, PageHeader, PaymentBadge, StatusBadge, Timeline } from '~/components/ui'
 import { STATUSES, dateOnly, dateTime, money, serviceLabel } from '~/lib/format'
 import type { ShipmentStatus } from '~/lib/types'
@@ -11,9 +12,9 @@ export const Route = createFileRoute('/admin/shipments/$id')({
   },
   validateSearch: (s: Record<string, unknown>): { created?: number } => (s.created ? { created: 1 } : {}),
   loader: async ({ params }) => {
-    const res = await getShipment({ data: { id: Number(params.id) } })
+    const [res, riders] = await Promise.all([getShipment({ data: { id: Number(params.id) } }), listRiders()])
     if (!res) throw notFound()
-    return res
+    return { ...res, riders }
   },
   component: ShipmentDetail,
 })
@@ -28,7 +29,7 @@ const NEXT: Partial<Record<ShipmentStatus, ShipmentStatus>> = {
 }
 
 function ShipmentDetail() {
-  const { shipment: s, events } = Route.useLoaderData()
+  const { shipment: s, events, riders } = Route.useLoaderData()
   const { created } = Route.useSearch()
   const router = useRouter()
   const [msg, setMsg] = useState<{ tone: 'error' | 'success'; text: string } | null>(null)
@@ -84,6 +85,30 @@ function ShipmentDetail() {
             <Info label="Delivered" value={dateTime(s.delivered_at)} />
           </div>
 
+          {s.status === 'delivered' && (s.proof_image_key || s.recipient_signature || s.signed_by) && (
+            <div className="card p-5">
+              <h2 className="mb-4 font-display font-bold text-brand-900">Proof of delivery</h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {s.proof_image_key && (
+                  <a href={`/media/${s.proof_image_key}`} target="_blank" rel="noreferrer">
+                    <img src={`/media/${s.proof_image_key}`} alt="Package at delivery" className="max-h-72 w-full rounded-xl object-cover ring-1 ring-slate-200" />
+                  </a>
+                )}
+                <div className="space-y-3 text-sm">
+                  <Row label="Received by" value={s.signed_by} />
+                  <Row label="Delivered by" value={s.delivered_by_name} />
+                  <Row label="Time" value={dateTime(s.delivered_at)} />
+                  {s.recipient_signature && (
+                    <div>
+                      <p className="mb-1 text-slate-500">Signature</p>
+                      <img src={`/media/${s.recipient_signature}`} alt="Signature" className="h-24 w-full rounded-lg bg-white object-contain ring-1 ring-slate-200" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="card p-5">
             <h2 className="mb-5 font-display font-bold text-brand-900">Tracking history</h2>
             <Timeline events={events} showStaff />
@@ -130,6 +155,40 @@ function ShipmentDetail() {
                 {busy ? 'Saving…' : 'Save update'}
               </button>
             </form>
+          )}
+
+          {!closed && (
+            <div className="card space-y-3 p-5 text-sm">
+              <h2 className="font-display font-bold text-brand-900">Rider / driver</h2>
+              <select
+                className="input"
+                value={s.assigned_rider ?? ''}
+                disabled={busy}
+                onChange={async (e) => {
+                  setBusy(true)
+                  const riderId = e.target.value ? Number(e.target.value) : null
+                  const res = await assignRider({ data: { id: s.id, riderId } })
+                  setBusy(false)
+                  setMsg(
+                    res.ok
+                      ? { tone: 'success', text: res.riderName ? `Assigned to ${res.riderName}. It now shows in their “My deliveries”.` : 'Rider removed.' }
+                      : { tone: 'error', text: res.error },
+                  )
+                  if (res.ok) router.invalidate()
+                }}
+              >
+                <option value="">— Not assigned —</option>
+                {riders.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.full_name}
+                    {r.role === 'rider' ? '' : ` (${r.role})`} · {r.open_jobs} open
+                  </option>
+                ))}
+              </select>
+              {s.pickup_requested === 1 && s.status === 'pending' && (
+                <p className="rounded-lg bg-orange-50 px-3 py-2 text-xs text-orange-900">Customer asked for pickup from: {s.sender_address || 'their address'}</p>
+              )}
+            </div>
           )}
 
           <div className="card space-y-3 p-5 text-sm">

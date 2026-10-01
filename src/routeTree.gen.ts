@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
+import { Route as AppRouteImport } from './routes/app'
+import { Route as BookRouteImport } from './routes/book'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MerchantRouteRouteImport } from './routes/merchant/route'
@@ -21,8 +23,10 @@ import { Route as ServicesRouteImport } from './routes/services'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as TrackRouteImport } from './routes/track'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminDeliveriesRouteImport } from './routes/admin/deliveries'
 import { Route as AdminFinanceRouteImport } from './routes/admin/finance'
 import { Route as AdminInboxRouteImport } from './routes/admin/inbox'
+import { Route as AdminRatesRouteImport } from './routes/admin/rates'
 import { Route as AdminStaffRouteImport } from './routes/admin/staff'
 import { Route as AdminWebsiteRouteImport } from './routes/admin/website'
 import { Route as MerchantIndexRouteImport } from './routes/merchant/index'
@@ -57,6 +61,16 @@ const AccountRoute = AccountRouteImport.update({
 const AdminRouteRoute = AdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BookRoute = BookRouteImport.update({
+  id: '/book',
+  path: '/book',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -99,6 +113,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminDeliveriesRoute = AdminDeliveriesRouteImport.update({
+  id: '/deliveries',
+  path: '/deliveries',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminFinanceRoute = AdminFinanceRouteImport.update({
   id: '/finance',
   path: '/finance',
@@ -107,6 +126,11 @@ const AdminFinanceRoute = AdminFinanceRouteImport.update({
 const AdminInboxRoute = AdminInboxRouteImport.update({
   id: '/inbox',
   path: '/inbox',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminRatesRoute = AdminRatesRouteImport.update({
+  id: '/rates',
+  path: '/rates',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminStaffRoute = AdminStaffRouteImport.update({
@@ -191,14 +215,18 @@ export interface FileRoutesByFullPath {
   '/merchant': typeof MerchantRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
+  '/app': typeof AppRoute
+  '/book': typeof BookRoute
   '/contact': typeof ContactRoute
   '/login': typeof LoginRoute
   '/report': typeof ReportRoute
   '/services': typeof ServicesRoute
   '/setup': typeof SetupRoute
   '/track': typeof TrackRoute
+  '/admin/deliveries': typeof AdminDeliveriesRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/inbox': typeof AdminInboxRoute
+  '/admin/rates': typeof AdminRatesRoute
   '/admin/staff': typeof AdminStaffRoute
   '/admin/website': typeof AdminWebsiteRoute
   '/merchant/deliveries': typeof MerchantDeliveriesRoute
@@ -220,14 +248,18 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
+  '/app': typeof AppRoute
+  '/book': typeof BookRoute
   '/contact': typeof ContactRoute
   '/login': typeof LoginRoute
   '/report': typeof ReportRoute
   '/services': typeof ServicesRoute
   '/setup': typeof SetupRoute
   '/track': typeof TrackRoute
+  '/admin/deliveries': typeof AdminDeliveriesRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/inbox': typeof AdminInboxRoute
+  '/admin/rates': typeof AdminRatesRoute
   '/admin/staff': typeof AdminStaffRoute
   '/admin/website': typeof AdminWebsiteRoute
   '/merchant/deliveries': typeof MerchantDeliveriesRoute
@@ -252,14 +284,18 @@ export interface FileRoutesById {
   '/merchant': typeof MerchantRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
+  '/app': typeof AppRoute
+  '/book': typeof BookRoute
   '/contact': typeof ContactRoute
   '/login': typeof LoginRoute
   '/report': typeof ReportRoute
   '/services': typeof ServicesRoute
   '/setup': typeof SetupRoute
   '/track': typeof TrackRoute
+  '/admin/deliveries': typeof AdminDeliveriesRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/inbox': typeof AdminInboxRoute
+  '/admin/rates': typeof AdminRatesRoute
   '/admin/staff': typeof AdminStaffRoute
   '/admin/website': typeof AdminWebsiteRoute
   '/merchant/deliveries': typeof MerchantDeliveriesRoute
@@ -285,14 +321,18 @@ export interface FileRouteTypes {
     | '/merchant'
     | '/about'
     | '/account'
+    | '/app'
+    | '/book'
     | '/contact'
     | '/login'
     | '/report'
     | '/services'
     | '/setup'
     | '/track'
+    | '/admin/deliveries'
     | '/admin/finance'
     | '/admin/inbox'
+    | '/admin/rates'
     | '/admin/staff'
     | '/admin/website'
     | '/merchant/deliveries'
@@ -314,14 +354,18 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/account'
+    | '/app'
+    | '/book'
     | '/contact'
     | '/login'
     | '/report'
     | '/services'
     | '/setup'
     | '/track'
+    | '/admin/deliveries'
     | '/admin/finance'
     | '/admin/inbox'
+    | '/admin/rates'
     | '/admin/staff'
     | '/admin/website'
     | '/merchant/deliveries'
@@ -345,14 +389,18 @@ export interface FileRouteTypes {
     | '/merchant'
     | '/about'
     | '/account'
+    | '/app'
+    | '/book'
     | '/contact'
     | '/login'
     | '/report'
     | '/services'
     | '/setup'
     | '/track'
+    | '/admin/deliveries'
     | '/admin/finance'
     | '/admin/inbox'
+    | '/admin/rates'
     | '/admin/staff'
     | '/admin/website'
     | '/merchant/deliveries'
@@ -377,6 +425,8 @@ export interface RootRouteChildren {
   MerchantRouteRoute: typeof MerchantRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
   AccountRoute: typeof AccountRoute
+  AppRoute: typeof AppRoute
+  BookRoute: typeof BookRoute
   ContactRoute: typeof ContactRoute
   LoginRoute: typeof LoginRoute
   ReportRoute: typeof ReportRoute
@@ -418,6 +468,20 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/book': {
+      id: '/book'
+      path: '/book'
+      fullPath: '/book'
+      preLoaderRoute: typeof BookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -476,6 +540,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/deliveries': {
+      id: '/admin/deliveries'
+      path: '/deliveries'
+      fullPath: '/admin/deliveries'
+      preLoaderRoute: typeof AdminDeliveriesRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/finance': {
       id: '/admin/finance'
       path: '/finance'
@@ -488,6 +559,13 @@ declare module '@tanstack/react-router' {
       path: '/inbox'
       fullPath: '/admin/inbox'
       preLoaderRoute: typeof AdminInboxRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/rates': {
+      id: '/admin/rates'
+      path: '/rates'
+      fullPath: '/admin/rates'
+      preLoaderRoute: typeof AdminRatesRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/admin/staff': {
@@ -599,8 +677,10 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteRouteChildren {
+  AdminDeliveriesRoute: typeof AdminDeliveriesRoute
   AdminFinanceRoute: typeof AdminFinanceRoute
   AdminInboxRoute: typeof AdminInboxRoute
+  AdminRatesRoute: typeof AdminRatesRoute
   AdminStaffRoute: typeof AdminStaffRoute
   AdminWebsiteRoute: typeof AdminWebsiteRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -612,8 +692,10 @@ interface AdminRouteRouteChildren {
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminDeliveriesRoute: AdminDeliveriesRoute,
   AdminFinanceRoute: AdminFinanceRoute,
   AdminInboxRoute: AdminInboxRoute,
+  AdminRatesRoute: AdminRatesRoute,
   AdminStaffRoute: AdminStaffRoute,
   AdminWebsiteRoute: AdminWebsiteRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -650,6 +732,8 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantRouteRoute: MerchantRouteRouteWithChildren,
   AboutRoute: AboutRoute,
   AccountRoute: AccountRoute,
+  AppRoute: AppRoute,
+  BookRoute: BookRoute,
   ContactRoute: ContactRoute,
   LoginRoute: LoginRoute,
   ReportRoute: ReportRoute,

@@ -30,9 +30,55 @@ async function serveMedia(request: Request, env: Cloudflare.Env, key: string) {
   return new Response(obj.body, { headers })
 }
 
+/** The "install as app" description, built from Admin → Website (name, colours, app icon). */
+async function manifest(env: Cloudflare.Env) {
+  const rows = await env.DB.prepare(
+    "SELECT key, value FROM settings WHERE key IN ('company_name','app_short_name','tagline','primary_color','app_icon_key')",
+  ).all<{ key: string; value: string }>()
+  const s = Object.fromEntries(rows.results.map((r) => [r.key, r.value])) as Record<string, string>
+  const name = s.company_name || 'Ronia Logistics'
+  const hex = (v: string | undefined, d: string) => (/^#[0-9a-f]{6}$/i.test(v || '') ? v! : d)
+  const custom = s.app_icon_key && !/^https?:/i.test(s.app_icon_key) ? `/media/${s.app_icon_key}` : s.app_icon_key || ''
+  const icons = custom
+    ? [
+        { src: custom, sizes: '512x512', purpose: 'any' },
+        { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: '/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      ]
+    : [
+        { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: '/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      ]
+  const body = {
+    id: '/',
+    name,
+    short_name: (s.app_short_name || name).slice(0, 12),
+    description: s.tagline || 'Book deliveries and track packages.',
+    start_url: '/?app=1',
+    scope: '/',
+    display: 'standalone',
+    orientation: 'portrait',
+    background_color: '#ffffff',
+    theme_color: hex(s.primary_color, '#0b2545'),
+    icons,
+    shortcuts: [
+      { name: 'Track a package', url: '/track', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
+      { name: 'Book a delivery', url: '/book', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
+      { name: 'My deliveries (riders)', url: '/admin/deliveries', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
+      { name: 'Merchant portal', url: '/merchant', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
+    ],
+  }
+  return new Response(JSON.stringify(body), {
+    headers: { 'content-type': 'application/manifest+json', 'cache-control': 'public, max-age=300' },
+  })
+}
+
 export default {
   async fetch(request: Request, env: Cloudflare.Env) {
     const url = new URL(request.url)
+    if (url.pathname === '/manifest.webmanifest') return manifest(env)
     // Browsers ask for /favicon.ico directly — serve the icon uploaded in Admin → Website
     if (url.pathname === '/favicon.ico') {
       const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'favicon_key'").first<{ value: string }>()

@@ -58,6 +58,13 @@ export type Shipment = {
   received_by_name?: string | null
   dispatched_by_name?: string | null
   delivered_by_name?: string | null
+  assigned_rider?: number | null
+  assigned_rider_name?: string | null
+  signed_by?: string | null
+  proof_image_key?: string | null
+  recipient_signature?: string | null
+  booked_online?: number
+  pickup_requested?: number
 }
 
 export type ShipmentEvent = {

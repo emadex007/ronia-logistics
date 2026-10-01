@@ -17,7 +17,8 @@ export const trackShipment = createServerFn({ method: 'GET' })
     if (!code) return null
     const s = await first<Shipment>(
       `SELECT id, tracking_code, sender_name, receiver_name, origin_city, destination_city, destination_country,
-              service_type, quantity, weight_kg, status, current_location, shipping_fee, payment_status, estimated_delivery, delivered_at, created_at, updated_at
+              service_type, quantity, weight_kg, status, current_location, shipping_fee, payment_status, estimated_delivery, delivered_at, created_at, updated_at,
+              signed_by, proof_image_key
          FROM shipments WHERE tracking_code = ?`,
       code,
     )
@@ -32,7 +33,7 @@ export const trackShipment = createServerFn({ method: 'GET' })
       return b ? `${a} ${b[0]}.` : a
     }
     return {
-      shipment: { ...s, id: 0, sender_name: mask(s.sender_name), receiver_name: mask(s.receiver_name) },
+      shipment: { ...s, id: 0, sender_name: mask(s.sender_name), receiver_name: mask(s.receiver_name), signed_by: s.signed_by ? mask(s.signed_by) : null },
       events,
     }
   })

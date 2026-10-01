@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { createFileRoute, useNavigate, redirect } from '@tanstack/react-router'
 import { createShipment } from '~/fns/shipments'
+import { quotePrice } from '~/fns/booking'
 import { merchantOptions } from '~/fns/merchants'
 import { Alert, Field, PageHeader } from '~/components/ui'
 import { SERVICE_TYPES, toKobo } from '~/lib/format'
@@ -20,6 +21,22 @@ function NewShipment() {
   const [busy, setBusy] = useState(false)
   const [payment, setPayment] = useState<'paid' | 'unpaid' | 'cod'>('paid')
   const [service, setService] = useState('standard')
+  const formRef = useRef<HTMLFormElement>(null)
+  const [quote, setQuote] = useState('')
+
+  async function fillFromPriceList() {
+    const form = formRef.current
+    if (!form) return
+    const f = Object.fromEntries(new FormData(form)) as Record<string, string>
+    if (!f.destination_city) return setQuote('Enter the destination city first.')
+    const q = await quotePrice({
+      data: { origin: f.origin_city || 'Abuja', destination: f.destination_city, service: f.service_type, weight: Number(f.weight_kg) || 0, quantity: Number(f.quantity) || 1 },
+    }).catch(() => null)
+    if (!q) return setQuote(`No price set for ${f.origin_city || 'Abuja'} → ${f.destination_city} (${f.service_type}). Enter it manually or add it under Prices.`)
+    const input = form.elements.namedItem('shipping_fee') as HTMLInputElement
+    input.value = String(q.fee / 100)
+    setQuote(`Price list: ₦${(q.fee / 100).toLocaleString('en-NG')}${q.eta ? ` · ${q.eta}` : ''}`)
+  }
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -65,7 +82,7 @@ function NewShipment() {
   return (
     <>
       <PageHeader title="New shipment" subtitle="Register a package. A tracking number and receipt are generated automatically." />
-      <form onSubmit={onSubmit} className="space-y-6">
+      <form ref={formRef} onSubmit={onSubmit} className="space-y-6">
         {error && <Alert>{error}</Alert>}
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -162,7 +179,13 @@ function NewShipment() {
         <section className="card grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
           <h2 className="font-display font-bold text-brand-900 sm:col-span-2 lg:col-span-4">Payment</h2>
           <Field label="Shipping fee (₦) *">
-            <input name="shipping_fee" type="number" min={0} step="0.01" required className="input" />
+            <div className="flex gap-2">
+              <input name="shipping_fee" type="number" min={0} step="0.01" required className="input" />
+              <button type="button" className="btn-ghost shrink-0 !px-3 text-xs" onClick={fillFromPriceList} title="Fill in the price from your price list">
+                Use price list
+              </button>
+            </div>
+            {quote && <p className="mt-1 text-xs text-slate-500">{quote}</p>}
           </Field>
           <Field label="Payment status">
             <select className="input" value={payment} onChange={(e) => setPayment(e.target.value as typeof payment)}>

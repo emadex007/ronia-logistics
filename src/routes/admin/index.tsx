@@ -1,9 +1,13 @@
-import { Link, createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute, redirect } from '@tanstack/react-router'
 import { getDashboard } from '~/fns/dashboard'
 import { PageHeader, PaymentBadge, StatCard, StatusBadge } from '~/components/ui'
 import { dateTime, money } from '~/lib/format'
 
 export const Route = createFileRoute('/admin/')({
+  // Riders go straight to their delivery list
+  beforeLoad: ({ context }) => {
+    if (context.user.role === 'rider' && context.user.perms.includes('shipments')) throw redirect({ to: '/admin/deliveries' })
+  },
   loader: () => getDashboard(),
   component: Dashboard,
 })

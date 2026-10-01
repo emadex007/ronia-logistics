@@ -3,6 +3,7 @@ import { Link, Outlet, createFileRoute, redirect, useRouter } from '@tanstack/re
 import { getMe, logout } from '~/fns/auth'
 import { unreadMessageCount } from '~/fns/messages'
 import { Logo } from '~/components/ui'
+import { InstallAppButton } from '~/components/InstallApp'
 import type { Perm } from '~/lib/permissions'
 import { ROLE_LABELS } from '~/lib/format'
 import { useSiteSettings } from '~/components/useSite'
@@ -24,9 +25,11 @@ type NavItem = { to: string; label: string; icon: string; exact?: boolean; perms
 
 const NAV: NavItem[] = [
   { to: '/admin', label: 'Dashboard', icon: '▦', exact: true },
+  { to: '/admin/deliveries', label: 'My deliveries', icon: '🛵', perms: ['shipments'] },
   { to: '/admin/shipments/new', label: 'New shipment', icon: '＋', perms: ['shipments'] },
   { to: '/admin/shipments', label: 'Shipments', icon: '📦', exact: true, perms: ['shipments'] },
   { to: '/admin/merchants', label: 'Merchants & stock', icon: '🏬', perms: ['merchants'] },
+  { to: '/admin/rates', label: 'Prices & booking', icon: '🏷', perms: ['finance'] },
   { to: '/admin/finance', label: 'Income & expenses', icon: '₦', perms: ['finance', 'record_money'] },
   { to: '/admin/inbox', label: 'Messages', icon: '💬', perms: ['inbox'] },
   { to: '/admin/staff', label: 'Staff', icon: '👥', perms: ['staff'] },
@@ -71,6 +74,7 @@ function AdminLayout() {
           </Link>
         ),
       )}
+      <InstallAppButton className="mt-4 mb-2 flex items-center gap-3 rounded-lg bg-accent-500/90 px-3 py-2 text-sm font-semibold text-white hover:bg-accent-500" label="📲 Install app on this phone" />
       <div className="mt-auto rounded-xl bg-white/5 p-3">
         <p className="truncate text-sm font-semibold text-white">{user.full_name}</p>
         <p className="text-xs text-slate-400">

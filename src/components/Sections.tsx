@@ -53,7 +53,7 @@ export function Hero({ s }: { s: Settings }) {
           <h1 className="mt-5 font-display text-4xl leading-[1.1] font-extrabold sm:text-5xl lg:text-6xl">{s.hero_title}</h1>
           <p className="mt-5 max-w-xl text-lg text-slate-200">{s.hero_subtitle}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/contact" className="btn-accent !px-6 !py-3 text-base">
+            <Link to="/book" className="btn-accent !px-6 !py-3 text-base">
               {s.hero_cta_label || 'Book a delivery'}
             </Link>
             <Link to="/services" className="btn border border-white/30 !px-6 !py-3 text-base text-white backdrop-blur hover:bg-white/10">

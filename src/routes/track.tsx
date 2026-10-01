@@ -7,7 +7,10 @@ import { StatusBadge, Timeline } from '~/components/ui'
 import { PROGRESS, dateOnly, dateTime, money, serviceLabel, statusLabel } from '~/lib/format'
 
 export const Route = createFileRoute('/track')({
-  validateSearch: (s: Record<string, unknown>) => ({ code: typeof s.code === 'string' ? s.code : '' }),
+  validateSearch: (s: Record<string, unknown>): { code: string; booked?: number } => ({
+    code: typeof s.code === 'string' ? s.code : '',
+    ...(s.booked ? { booked: 1 } : {}),
+  }),
   loaderDeps: ({ search }) => ({ code: search.code }),
   loader: async ({ deps }) => {
     const [site, result, canPayOnline] = await Promise.all([
@@ -23,6 +26,7 @@ export const Route = createFileRoute('/track')({
 
 function TrackPage() {
   const { site, result, code, canPayOnline } = Route.useLoaderData()
+  const { booked } = Route.useSearch()
   const navigate = useNavigate()
   const [input, setInput] = useState(code)
 
@@ -65,6 +69,15 @@ function TrackPage() {
 
         {s && (
           <div className="space-y-6">
+            {booked && (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-900">
+                <p className="font-display text-lg font-bold">🎉 Booking confirmed!</p>
+                <p className="text-sm">
+                  Your tracking number is <b className="font-mono">{s.tracking_code}</b> — screenshot or save it. We will call you shortly
+                  {s.current_location === 'Awaiting pickup' ? ' to arrange the pickup' : ''}. You can pay below now, or pay later.
+                </p>
+              </div>
+            )}
             <div className="card p-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -105,6 +118,22 @@ function TrackPage() {
                 <Info label="Items" value={`${s.quantity}${s.weight_kg ? ` · ${s.weight_kg} kg` : ''}`} />
               </dl>
             </div>
+
+            {s.status === 'delivered' && (s.proof_image_key || s.signed_by) && (
+              <div className="card flex flex-col gap-4 p-6 sm:flex-row sm:items-center">
+                {s.proof_image_key && (
+                  <a href={`/media/${s.proof_image_key}`} target="_blank" rel="noreferrer" className="shrink-0">
+                    <img src={`/media/${s.proof_image_key}`} alt="Package at delivery" className="h-40 w-full rounded-xl object-cover ring-1 ring-slate-200 sm:w-56" />
+                  </a>
+                )}
+                <div>
+                  <p className="font-display text-lg font-bold text-emerald-700">✅ Delivered</p>
+                  {s.signed_by && <p className="text-sm text-slate-700">Received and signed for by <b>{s.signed_by}</b></p>}
+                  <p className="text-sm text-slate-500">{dateTime(s.delivered_at)}</p>
+                  {s.proof_image_key && <p className="mt-1 text-xs text-slate-400">Photo taken by our rider at the point of delivery.</p>}
+                </div>
+              </div>
+            )}
 
             {s.payment_status !== 'paid' && s.shipping_fee > 0 && s.status !== 'cancelled' && (
               <PayBox code={s.tracking_code} fee={s.shipping_fee} enabled={canPayOnline} phone={site.settings.phone} />
