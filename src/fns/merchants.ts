@@ -14,7 +14,7 @@ export type MerchantRow = Merchant & {
 }
 
 export const listMerchants = createServerFn({ method: 'GET' })
-  .inputValidator((d: { q?: string }) => d)
+  .validator((d: { q?: string }) => d)
   .handler(async ({ data }) => {
     await requirePerm('merchants')
     const q = data.q?.trim() ? `%${data.q.trim()}%` : null
@@ -39,7 +39,7 @@ export const merchantOptions = createServerFn({ method: 'GET' }).handler(async (
 })
 
 export const getMerchant = createServerFn({ method: 'GET' })
-  .inputValidator((d: { id: number }) => d)
+  .validator((d: { id: number }) => d)
   .handler(async ({ data }) => {
     const me = await requirePerm('merchants')
     const id = Number(data.id)
@@ -77,7 +77,7 @@ export const getMerchant = createServerFn({ method: 'GET' })
 type MerchantInput = Partial<Omit<Merchant, 'id' | 'created_at' | 'is_active'>> & { business_name: string }
 
 export const saveMerchant = createServerFn({ method: 'POST' })
-  .inputValidator((d: MerchantInput & { id?: number; is_active?: boolean }) => d)
+  .validator((d: MerchantInput & { id?: number; is_active?: boolean }) => d)
   .handler(async ({ data }) => {
     const me = await requirePerm('merchants')
     if (!data.business_name?.trim()) return { ok: false as const, error: 'Business name is required.' }
@@ -119,7 +119,7 @@ export const saveMerchant = createServerFn({ method: 'POST' })
 
 /** Give a merchant a login to their own portal (role = merchant). */
 export const createMerchantLogin = createServerFn({ method: 'POST' })
-  .inputValidator((d: { merchant_id: number; full_name: string; email: string; password: string }) => d)
+  .validator((d: { merchant_id: number; full_name: string; email: string; password: string }) => d)
   .handler(async ({ data }) => {
     const me = await requirePerm('merchants')
     const merchant = await first<Merchant>('SELECT * FROM merchants WHERE id = ?', Number(data.merchant_id))
@@ -141,7 +141,7 @@ export const createMerchantLogin = createServerFn({ method: 'POST' })
   })
 
 export const setMerchantLogin = createServerFn({ method: 'POST' })
-  .inputValidator((d: { user_id: number; is_active?: boolean; password?: string }) => d)
+  .validator((d: { user_id: number; is_active?: boolean; password?: string }) => d)
   .handler(async ({ data }) => {
     const me = await requirePerm('merchants')
     const u = await first<{ id: number }>("SELECT id FROM users WHERE id = ? AND role = 'merchant'", Number(data.user_id))
@@ -172,7 +172,7 @@ type ProductInput = {
 }
 
 export const saveProduct = createServerFn({ method: 'POST' })
-  .inputValidator((d: ProductInput) => d)
+  .validator((d: ProductInput) => d)
   .handler(async ({ data }) => {
     const me = await requirePerm('merchants')
     if (!data.name?.trim()) return { ok: false as const, error: 'Product name is required.' }
@@ -256,7 +256,7 @@ async function applyMovement(m: {
 }
 
 export const recordStockMovement = createServerFn({ method: 'POST' })
-  .inputValidator(
+  .validator(
     (d: { product_id: number; merchant_id: number; type: MovementType; quantity: number; unit_price?: number; reference?: string; note?: string; tracking_code?: string }) => d,
   )
   .handler(async ({ data }) => {
@@ -287,7 +287,7 @@ export const recordStockMovement = createServerFn({ method: 'POST' })
 
 /** Record money paid out to a merchant for their sales. */
 export const recordPayout = createServerFn({ method: 'POST' })
-  .inputValidator((d: { merchant_id: number; amount: number; method: string; reference?: string; note?: string; paid_on?: string }) => d)
+  .validator((d: { merchant_id: number; amount: number; method: string; reference?: string; note?: string; paid_on?: string }) => d)
   .handler(async ({ data }) => {
     const me = await requirePerm('finance')
     const merchantId = Number(data.merchant_id)

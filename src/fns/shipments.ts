@@ -35,7 +35,7 @@ async function queueNotifications(s: Pick<Shipment, 'id' | 'tracking_code' | 'se
 export type ShipmentFilters = { q?: string; status?: string; page?: number }
 
 export const listShipments = createServerFn({ method: 'GET' })
-  .inputValidator((d: ShipmentFilters) => d)
+  .validator((d: ShipmentFilters) => d)
   .handler(async ({ data }) => {
     await requirePerm('shipments')
     const where: string[] = []
@@ -65,7 +65,7 @@ export const listShipments = createServerFn({ method: 'GET' })
   })
 
 export const getShipment = createServerFn({ method: 'GET' })
-  .inputValidator((d: { id: number }) => d)
+  .validator((d: { id: number }) => d)
   .handler(async ({ data }) => {
     await requirePerm('shipments')
     const shipment = await first<Shipment>(
@@ -116,7 +116,7 @@ export type NewShipmentInput = {
 }
 
 export const createShipment = createServerFn({ method: 'POST' })
-  .inputValidator((d: NewShipmentInput) => d)
+  .validator((d: NewShipmentInput) => d)
   .handler(async ({ data }) => {
     const user = await requirePerm('shipments')
     const required: (keyof NewShipmentInput)[] = ['sender_name', 'sender_phone', 'receiver_name', 'receiver_phone', 'receiver_address', 'destination_city']
@@ -210,7 +210,7 @@ export const createShipment = createServerFn({ method: 'POST' })
   })
 
 export const updateShipmentStatus = createServerFn({ method: 'POST' })
-  .inputValidator((d: { id: number; status: ShipmentStatus; location?: string; note?: string }) => d)
+  .validator((d: { id: number; status: ShipmentStatus; location?: string; note?: string }) => d)
   .handler(async ({ data }) => {
     const user = await requirePerm('shipments')
     const s = await first<Shipment>('SELECT * FROM shipments WHERE id = ?', Number(data.id))
@@ -248,7 +248,7 @@ export const updateShipmentStatus = createServerFn({ method: 'POST' })
   })
 
 export const markShipmentPaid = createServerFn({ method: 'POST' })
-  .inputValidator((d: { id: number; method: string }) => d)
+  .validator((d: { id: number; method: string }) => d)
   .handler(async ({ data }) => {
     const user = await requirePerm('shipments')
     const s = await first<Shipment>('SELECT * FROM shipments WHERE id = ?', Number(data.id))

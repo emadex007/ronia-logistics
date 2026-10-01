@@ -15,7 +15,7 @@ type SetupInput = { full_name: string; email: string; phone?: string; password: 
 
 /** Creates the very first administrator. Refuses once any user exists. */
 export const setupFirstAdmin = createServerFn({ method: 'POST' })
-  .inputValidator((d: SetupInput) => d)
+  .validator((d: SetupInput) => d)
   .handler(async ({ data }) => {
     const row = await first<{ n: number }>('SELECT COUNT(*) AS n FROM users')
     if ((row?.n ?? 0) > 0) return { ok: false as const, error: 'Setup has already been completed. Please log in.' }
@@ -51,7 +51,7 @@ function portalOf(role: string): Portal {
 }
 
 export const login = createServerFn({ method: 'POST' })
-  .inputValidator((d: { email: string; password: string; portal: Portal }) => d)
+  .validator((d: { email: string; password: string; portal: Portal }) => d)
   .handler(async ({ data }) => {
     const portal: Portal = data.portal in PORTAL_ROLES ? data.portal : 'customer'
     const email = (data.email ?? '').trim().toLowerCase()

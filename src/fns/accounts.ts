@@ -13,7 +13,7 @@ async function emailTaken(email: string) {
 // ───────────── Customers (no approval needed) ─────────────
 
 export const registerCustomer = createServerFn({ method: 'POST' })
-  .inputValidator((d: { full_name: string; phone: string; email: string; password: string }) => d)
+  .validator((d: { full_name: string; phone: string; email: string; password: string }) => d)
   .handler(async ({ data }) => {
     const email = (data.email ?? '').trim().toLowerCase()
     if (!data.full_name?.trim()) return { ok: false as const, error: 'Enter your name.' }
@@ -60,7 +60,7 @@ export const getMyShipments = createServerFn({ method: 'GET' }).handler(async ()
 })
 
 export const watchShipment = createServerFn({ method: 'POST' })
-  .inputValidator((d: { code: string }) => d)
+  .validator((d: { code: string }) => d)
   .handler(async ({ data }) => {
     const me = await requireCustomer()
     const s = await first<{ id: number }>('SELECT id FROM shipments WHERE tracking_code = ?', (data.code ?? '').trim().toUpperCase())
@@ -70,7 +70,7 @@ export const watchShipment = createServerFn({ method: 'POST' })
   })
 
 export const unwatchShipment = createServerFn({ method: 'POST' })
-  .inputValidator((d: { shipment_id: number }) => d)
+  .validator((d: { shipment_id: number }) => d)
   .handler(async ({ data }) => {
     const me = await requireCustomer()
     await run('DELETE FROM customer_watchlist WHERE user_id = ? AND shipment_id = ?', me.id, Number(data.shipment_id))
@@ -90,7 +90,7 @@ export type ApplyInput = {
 }
 
 export const applyAsMerchant = createServerFn({ method: 'POST' })
-  .inputValidator((d: ApplyInput) => d)
+  .validator((d: ApplyInput) => d)
   .handler(async ({ data }) => {
     const email = (data.email ?? '').trim().toLowerCase()
     if (!data.business_name?.trim()) return { ok: false as const, error: 'Enter your business name.' }
@@ -139,7 +139,7 @@ export type Application = {
 }
 
 export const listApplications = createServerFn({ method: 'GET' })
-  .inputValidator((d: { status?: 'pending' | 'approved' | 'rejected' | 'all' }) => d)
+  .validator((d: { status?: 'pending' | 'approved' | 'rejected' | 'all' }) => d)
   .handler(async ({ data }) => {
     const me = await requireUser(STAFF_ROLES)
     if (!me.perms.includes('merchants')) return [] as Application[]
@@ -162,7 +162,7 @@ export const pendingApplicationCount = createServerFn({ method: 'GET' }).handler
 
 /** Approve: creates the merchant record + their login (using the password they chose when applying). */
 export const approveApplication = createServerFn({ method: 'POST' })
-  .inputValidator((d: { id: number }) => d)
+  .validator((d: { id: number }) => d)
   .handler(async ({ data }) => {
     const me = await requirePerm('merchants')
     const app = await first<Application & { password_hash: string }>('SELECT * FROM merchant_applications WHERE id = ?', Number(data.id))
@@ -196,7 +196,7 @@ export const approveApplication = createServerFn({ method: 'POST' })
   })
 
 export const rejectApplication = createServerFn({ method: 'POST' })
-  .inputValidator((d: { id: number; reason: string }) => d)
+  .validator((d: { id: number; reason: string }) => d)
   .handler(async ({ data }) => {
     const me = await requirePerm('merchants')
     const app = await first<Application>('SELECT * FROM merchant_applications WHERE id = ?', Number(data.id))

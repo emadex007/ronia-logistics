@@ -31,7 +31,7 @@ export const listStaff = createServerFn({ method: 'GET' }).handler(async () => {
 })
 
 export const createStaff = createServerFn({ method: 'POST' })
-  .inputValidator((d: { full_name: string; email: string; phone?: string; role: Role; branch?: string; password: string }) => d)
+  .validator((d: { full_name: string; email: string; phone?: string; role: Role; branch?: string; password: string }) => d)
   .handler(async ({ data }) => {
     const me = await requireUser(['admin'])
     if (!data.full_name?.trim() || !data.email?.trim()) return { ok: false as const, error: 'Name and email are required.' }
@@ -53,7 +53,7 @@ export const createStaff = createServerFn({ method: 'POST' })
   })
 
 export const updateStaff = createServerFn({ method: 'POST' })
-  .inputValidator((d: { id: number; role?: Role; branch?: string; is_active?: boolean; password?: string; can_edit_site?: boolean; permissions?: string[] | null }) => d)
+  .validator((d: { id: number; role?: Role; branch?: string; is_active?: boolean; password?: string; can_edit_site?: boolean; permissions?: string[] | null }) => d)
   .handler(async ({ data }) => {
     const me = await requireUser(['admin'])
     const target = await first<{ id: number; role: Role }>('SELECT id, role FROM users WHERE id = ?', Number(data.id))

@@ -35,7 +35,7 @@ export const getPortalDashboard = createServerFn({ method: 'GET' }).handler(asyn
 })
 
 export const getPortalHistory = createServerFn({ method: 'GET' })
-  .inputValidator((d: { from?: string; to?: string; product?: number }) => d)
+  .validator((d: { from?: string; to?: string; product?: number }) => d)
   .handler(async ({ data }) => {
     const { merchantId } = await requireMerchant()
     const [movements, totals, products] = await Promise.all([
@@ -58,7 +58,7 @@ export const getPortalShipments = createServerFn({ method: 'GET' }).handler(asyn
 
 /** Printable statement: merchants can only see their own; staff can see any. */
 export const getStatementFn = createServerFn({ method: 'GET' })
-  .inputValidator((d: { merchantId?: number; from?: string; to?: string }) => d)
+  .validator((d: { merchantId?: number; from?: string; to?: string }) => d)
   .handler(async ({ data }) => {
     const user = await requireUser([...STAFF_ROLES, 'merchant'])
     if (user.role !== 'merchant' && !user.perms.includes('merchants')) return null

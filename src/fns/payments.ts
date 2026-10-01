@@ -14,7 +14,7 @@ function secret() {
 export const onlinePaymentEnabled = createServerFn({ method: 'GET' }).handler(async () => Boolean(secret()))
 
 export const startOnlinePayment = createServerFn({ method: 'POST' })
-  .inputValidator((d: { code: string; email: string; origin: string }) => d)
+  .validator((d: { code: string; email: string; origin: string }) => d)
   .handler(async ({ data }) => {
     const key = secret()
     if (!key) return { ok: false as const, error: 'Online payment is not switched on yet. Please pay at the office or by transfer.' }
@@ -64,7 +64,7 @@ export const startOnlinePayment = createServerFn({ method: 'POST' })
   })
 
 export const verifyOnlinePayment = createServerFn({ method: 'GET' })
-  .inputValidator((d: { reference: string }) => d)
+  .validator((d: { reference: string }) => d)
   .handler(async ({ data }) => {
     const reference = (data.reference ?? '').trim()
     const payment = await first<{ id: number; shipment_id: number; amount: number; status: string }>(

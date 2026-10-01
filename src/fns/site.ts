@@ -46,7 +46,7 @@ async function writeSettings(entries: [string, string][]) {
 }
 
 export const saveSiteSettings = createServerFn({ method: 'POST' })
-  .inputValidator((d: { values: Record<string, string> }) => d)
+  .validator((d: { values: Record<string, string> }) => d)
   .handler(async ({ data }) => {
     const me = await requireSiteEditor()
     const res = validateValues(data.values)
@@ -70,7 +70,7 @@ const MAX_VIDEO = 60 * 1024 * 1024
 
 /** Upload a logo, icon, photo or short video to R2. Returns the key to store in settings. */
 export const uploadMedia = createServerFn({ method: 'POST' })
-  .inputValidator((d: FormData) => {
+  .validator((d: FormData) => {
     if (!(d instanceof FormData)) throw new Error('Expected a file upload.')
     return d
   })
@@ -150,7 +150,7 @@ export const exportSite = createServerFn({ method: 'GET' }).handler(async () => 
 
 /** Load an export file: puts the photos into this site's storage and replaces the website settings. */
 export const importSite = createServerFn({ method: 'POST' })
-  .inputValidator((d: FormData) => {
+  .validator((d: FormData) => {
     if (!(d instanceof FormData)) throw new Error('Expected a file upload.')
     return d
   })

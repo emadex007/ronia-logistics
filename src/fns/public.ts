@@ -11,7 +11,7 @@ export const getSiteContent = createServerFn({ method: 'GET' }).handler(async ()
 
 /** Public tracking lookup — returns only what a customer should see. */
 export const trackShipment = createServerFn({ method: 'GET' })
-  .inputValidator((d: { code: string }) => d)
+  .validator((d: { code: string }) => d)
   .handler(async ({ data }) => {
     const code = (data.code ?? '').trim().toUpperCase()
     if (!code) return null

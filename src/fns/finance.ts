@@ -9,7 +9,7 @@ type Group = { key: string; income: number; expense: number; count: number }
 
 /** Full finance view — admin and manager only. */
 export const getFinance = createServerFn({ method: 'GET' })
-  .inputValidator((d: FinanceFilters) => d)
+  .validator((d: FinanceFilters) => d)
   .handler(async ({ data }) => {
     const me = await requirePerm('finance', 'record_money')
     const isManager = me.perms.includes('finance')
@@ -95,7 +95,7 @@ export type NewTransaction = {
 }
 
 export const addTransaction = createServerFn({ method: 'POST' })
-  .inputValidator((d: NewTransaction) => d)
+  .validator((d: NewTransaction) => d)
   .handler(async ({ data }) => {
     const me = await requirePerm('finance', 'record_money')
     const isManager = me.perms.includes('finance')
@@ -126,7 +126,7 @@ export const addTransaction = createServerFn({ method: 'POST' })
   })
 
 export const deleteTransaction = createServerFn({ method: 'POST' })
-  .inputValidator((d: { id: number; reason: string }) => d)
+  .validator((d: { id: number; reason: string }) => d)
   .handler(async ({ data }) => {
     const me = await requireUser(['admin'])
     const t = await first<Transaction>('SELECT * FROM transactions WHERE id = ?', Number(data.id))
