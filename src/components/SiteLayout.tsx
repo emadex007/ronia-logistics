@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { Link } from '@tanstack/react-router'
 import { Logo } from './ui'
+import { SOCIAL_LABELS, SocialLogo, type SocialKey } from './SocialIcons'
 import { isDark, mediaUrl, SOCIALS } from '~/lib/site'
 import type { Settings } from '~/lib/types'
 
@@ -15,7 +17,10 @@ export function SiteLayout({ settings, children }: { settings: Settings; childre
   const [open, setOpen] = useState(false)
   const wa = (settings.whatsapp || '').replace(/[^0-9]/g, '')
   const logo = mediaUrl(settings.logo_key)
-  const socials = SOCIALS.filter((s) => settings[s.key])
+  const socialLinks: { key: SocialKey; href: string }[] = [
+    ...SOCIALS.filter((s) => settings[s.key]).map((s) => ({ key: s.key as SocialKey, href: settings[s.key] })),
+    ...(wa ? [{ key: 'whatsapp' as SocialKey, href: `https://wa.me/${wa}` }] : []),
+  ]
   const dark = isDark(settings.header_bg || '#000000')
   const footerDark = isDark(settings.footer_bg || '#000000')
   const hover = dark ? 'hover:bg-white/10' : 'hover:bg-black/5'
@@ -93,21 +98,29 @@ export function SiteLayout({ settings, children }: { settings: Settings; childre
           <div>
             {settings.footer_show_logo !== '0' && <Logo name={settings.company_name} light={footerDark} src={logo || undefined} />}
             <p className="mt-4 text-sm leading-relaxed whitespace-pre-line opacity-80">{settings.footer_about || settings.tagline}</p>
-            {socials.length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {socials.map((s) => (
+            {socialLinks.length > 0 && (
+              <div className="mt-5 flex flex-wrap gap-2.5">
+                {socialLinks.map((l) => (
                   <a
-                    key={s.key}
-                    href={settings[s.key]}
+                    key={l.key}
+                    href={l.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-full border border-current/20 px-3 py-1 text-xs opacity-80 hover:opacity-100"
+                    aria-label={SOCIAL_LABELS[l.key]}
+                    title={SOCIAL_LABELS[l.key]}
+                    className="block h-9 w-9 overflow-hidden rounded-[10px] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                   >
-                    {s.label}
+                    <SocialLogo network={l.key} />
                   </a>
                 ))}
               </div>
             )}
+            <div className="mt-6">
+              <p className="mb-2 text-xs font-semibold tracking-wide uppercase" style={{ color: 'var(--footer-heading, #fff)' }}>
+                Track a package
+              </p>
+              <FooterTrack />
+            </div>
           </div>
           <div className="text-sm">
             <p className="font-semibold" style={{ color: 'var(--footer-heading, #fff)' }}>Company</p>
@@ -195,5 +208,28 @@ export function SiteLayout({ settings, children }: { settings: Settings; childre
         </a>
       )}
     </div>
+  )
+}
+
+function FooterTrack() {
+  const navigate = useNavigate()
+  const [code, setCode] = useState('')
+  return (
+    <form
+      className="flex max-w-xs overflow-hidden rounded-lg bg-white/95 ring-1 ring-black/5"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (code.trim()) navigate({ to: '/track', search: { code: code.trim().toUpperCase() } })
+      }}
+    >
+      <input
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+        placeholder="Tracking number"
+        aria-label="Tracking number"
+        className="min-w-0 flex-1 bg-transparent px-3 py-2 font-mono text-sm tracking-wide text-slate-900 uppercase outline-none placeholder:font-sans placeholder:tracking-normal placeholder:normal-case"
+      />
+      <button className="btn-accent !rounded-none !px-3 !py-2 text-xs">Track</button>
+    </form>
   )
 }

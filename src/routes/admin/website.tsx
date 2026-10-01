@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
 import { exportSite, getSiteSettings, importSite, saveSiteSettings } from '~/fns/site'
 import { Alert, PageHeader } from '~/components/ui'
+import { SocialLogo } from '~/components/SocialIcons'
 import { ColorField, ListEditor, MediaField, RangeField, Section, TextField } from '~/components/SiteEditorFields'
 import { SOCIALS, mediaUrl, type Faq, type Service, type Stat, type Step } from '~/lib/site'
 import type { Settings } from '~/lib/types'
@@ -489,7 +490,7 @@ function WebsiteEditor() {
             <Section title="Contact details" hint="Used in the footer, Contact page, receipts and the WhatsApp button.">
               <div className="grid gap-4 md:grid-cols-2">
                 <TextField label="Phone" value={v('phone')} onChange={set('phone')} />
-                <TextField label="WhatsApp number" value={v('whatsapp')} onChange={set('whatsapp')} hint="With country code, e.g. +234 803 000 0000" />
+                <TextField label="WhatsApp number" value={v('whatsapp')} onChange={set('whatsapp')} hint="With country code, e.g. +234 803 000 0000. Also shows the WhatsApp logo in the footer and the chat button." />
                 <TextField label="Email" value={v('email')} onChange={set('email')} />
                 <TextField label="Opening hours" value={v('office_hours')} onChange={set('office_hours')} />
                 <TextField label="Office address" value={v('address')} onChange={set('address')} />
@@ -504,7 +505,14 @@ function WebsiteEditor() {
             <Section title="Social media" hint="Paste full links, e.g. https://instagram.com/ronialogistics. Empty ones are hidden.">
               <div className="grid gap-4 md:grid-cols-2">
                 {SOCIALS.map((so) => (
-                  <TextField key={so.key} label={so.label} value={v(so.key)} onChange={set(so.key)} placeholder="https://…" />
+                  <div key={so.key} className="flex items-end gap-3">
+                    <span className="mb-0.5 block h-9 w-9 shrink-0 overflow-hidden rounded-[10px] ring-1 ring-slate-200">
+                      <SocialLogo network={so.key} />
+                    </span>
+                    <div className="flex-1">
+                      <TextField label={so.label} value={v(so.key)} onChange={set(so.key)} placeholder="https://…" />
+                    </div>
+                  </div>
                 ))}
               </div>
             </Section>

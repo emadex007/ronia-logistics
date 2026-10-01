@@ -1,7 +1,8 @@
 // Public website sections. All text and pictures come from Admin → Website.
 import { useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { jsonSetting, mediaUrl, type Faq, type Service, type Stat, type Step } from '~/lib/site'
+import { jsonSetting, mediaUrl, SOCIALS, type Faq, type Service, type Stat, type Step } from '~/lib/site'
+import { SOCIAL_LABELS, SocialLogo, type SocialKey } from './SocialIcons'
 import type { Settings } from '~/lib/types'
 
 export function TrackBox({ compact = false }: { compact?: boolean }) {
@@ -298,6 +299,7 @@ export function PageHero({ title, subtitle, image }: { title: string; subtitle?:
 export function ContactBlock({ s }: { s: Settings }) {
   const wa = (s.whatsapp || '').replace(/[^0-9]/g, '')
   const mapQ = s.map_query || s.address
+  const socials = SOCIALS.filter((x) => s[x.key]).map((x) => ({ key: x.key as SocialKey, href: s[x.key] }))
   const cards = [
     { icon: '📞', label: 'Call us', value: s.phone, href: `tel:${s.phone}` },
     { icon: '💬', label: 'WhatsApp', value: s.whatsapp, href: wa ? `https://wa.me/${wa}` : undefined },
@@ -328,6 +330,18 @@ export function ContactBlock({ s }: { s: Settings }) {
             </div>
           )
         })}
+        {socials.length > 0 && (
+          <div className="card p-4">
+            <span className="block text-xs font-semibold tracking-wide text-slate-500 uppercase">Follow us</span>
+            <div className="mt-3 flex flex-wrap gap-2.5">
+              {socials.map((l) => (
+                <a key={l.key} href={l.href} target="_blank" rel="noreferrer" title={SOCIAL_LABELS[l.key]} aria-label={SOCIAL_LABELS[l.key]} className="block h-10 w-10 overflow-hidden rounded-[10px] shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5">
+                  <SocialLogo network={l.key} />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       {mapQ && (
         <iframe

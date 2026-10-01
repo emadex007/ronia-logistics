@@ -71,6 +71,7 @@ export const SOCIALS = [
   { key: 'x_twitter', label: 'X (Twitter)' },
   { key: 'tiktok', label: 'TikTok' },
   { key: 'linkedin', label: 'LinkedIn' },
+  { key: 'youtube', label: 'YouTube' },
 ] as const
 
 /** Is a #rrggbb colour dark? (decides light/dark logo and text on the header) */
@@ -101,7 +102,7 @@ export const EDITABLE_KEYS = [
   'merchant_title', 'merchant_body', 'merchant_image',
   'gallery_title', 'gallery_json', 'faq_json', 'cta_title', 'cta_body',
   'phone', 'whatsapp', 'email', 'address', 'office_hours', 'map_query',
-  'facebook', 'instagram', 'x_twitter', 'tiktok', 'linkedin',
+  'facebook', 'instagram', 'x_twitter', 'tiktok', 'linkedin', 'youtube',
   'receipt_footer', 'tracking_prefix',
   'header_bg', 'header_text', 'header_height', 'site_width', 'hero_height',
   'btn_primary_bg', 'btn_primary_text', 'btn_primary_hover', 'btn_accent_bg', 'btn_accent_text', 'btn_accent_hover', 'btn_radius',

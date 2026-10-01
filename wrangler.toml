@@ -2,6 +2,10 @@ name = "ronia-logistics"
 main = "./src/server.ts"
 compatibility_date = "2025-09-02"
 compatibility_flags = ["nodejs_compat"]
+routes = [
+  { pattern = "ronialogistics.com", custom_domain = true },
+  { pattern = "www.ronialogistics.com", custom_domain = true }
+]
 
 # --- D1 database (shipments, tracking, staff, merchants, stock, income/expenses, settings) ---
 # Create with:  npx wrangler d1 create ronia_logistics_db
