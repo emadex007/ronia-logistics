@@ -108,4 +108,5 @@ export const EDITABLE_KEYS = [
   'btn_primary_bg', 'btn_primary_text', 'btn_primary_hover', 'btn_accent_bg', 'btn_accent_text', 'btn_accent_hover', 'btn_radius',
   'logo_height', 'logo_show_name', 'logo_name_size', 'base_font_size',
   'footer_bg', 'footer_text', 'footer_heading', 'footer_about', 'footer_copyright', 'footer_show_logo',
+  'chat_enabled', 'chat_title', 'chat_greeting', 'contact_form_title',
 ] as const

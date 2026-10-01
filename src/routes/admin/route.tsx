@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Outlet, createFileRoute, redirect, useRouter } from '@tanstack/react-router'
 import { getMe, logout } from '~/fns/auth'
+import { unreadMessageCount } from '~/fns/messages'
 import { Logo } from '~/components/ui'
 import type { Perm } from '~/lib/permissions'
 import { ROLE_LABELS } from '~/lib/format'
@@ -27,6 +28,7 @@ const NAV: NavItem[] = [
   { to: '/admin/shipments', label: 'Shipments', icon: '📦', exact: true, perms: ['shipments'] },
   { to: '/admin/merchants', label: 'Merchants & stock', icon: '🏬', perms: ['merchants'] },
   { to: '/admin/finance', label: 'Income & expenses', icon: '₦', perms: ['finance', 'record_money'] },
+  { to: '/admin/inbox', label: 'Messages', icon: '💬', perms: ['inbox'] },
   { to: '/admin/staff', label: 'Staff', icon: '👥', perms: ['staff'] },
   { to: '/admin/website', label: 'Website', icon: '🎨', perms: ['website'] },
 ]
@@ -38,6 +40,7 @@ function AdminLayout() {
   const [open, setOpen] = useState(false)
 
   const items = NAV.filter((n) => !n.perms || n.perms.some((p) => user.perms.includes(p)))
+  const unread = useUnreadMessages(user.perms.includes('inbox'))
 
   const sidebar = (
     <nav className="flex h-full flex-col gap-1 p-4">
@@ -62,6 +65,9 @@ function AdminLayout() {
           >
             <span className="w-5 text-center">{n.icon}</span>
             {n.label}
+            {n.to === '/admin/inbox' && unread > 0 && (
+              <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1.5 text-[11px] font-bold text-white">{unread}</span>
+            )}
           </Link>
         ),
       )}
@@ -92,8 +98,9 @@ function AdminLayout() {
       {/* Mobile top bar */}
       <div className="no-print sticky top-0 z-30 flex items-center justify-between bg-brand-950 px-4 py-3 md:hidden">
         <Logo light compact />
-        <button className="rounded-lg border border-white/20 px-3 py-1.5 text-sm text-white" onClick={() => setOpen(true)}>
+        <button className="relative rounded-lg border border-white/20 px-3 py-1.5 text-sm text-white" onClick={() => setOpen(true)}>
           Menu
+          {unread > 0 && <span className="absolute -top-1.5 -right-1.5 h-3 w-3 rounded-full bg-red-600 ring-2 ring-brand-950" />}
         </button>
       </div>
       {open && (
@@ -108,4 +115,50 @@ function AdminLayout() {
       </main>
     </div>
   )
+}
+
+/** Unread website chats/messages: polls every 30s, beeps softly and updates the tab title when new ones arrive. */
+function useUnreadMessages(enabled: boolean) {
+  const [n, setN] = useState(0)
+  useEffect(() => {
+    if (!enabled) return
+    let prev = -1
+    let alive = true
+    const base = document.title.replace(/^\(\d+\) /, '')
+    const tick = async () => {
+      const r = await unreadMessageCount().catch(() => null)
+      if (!alive || !r) return
+      const count = r.conversations
+      setN(count)
+      document.title = (count > 0 ? `(${count}) ` : '') + document.title.replace(/^\(\d+\) /, '')
+      if (prev >= 0 && count > prev) beep()
+      prev = count
+    }
+    tick()
+    const id = setInterval(tick, 30000)
+    window.addEventListener('ronia:inbox-read', tick)
+    return () => {
+      alive = false
+      clearInterval(id)
+      window.removeEventListener('ronia:inbox-read', tick)
+      document.title = base
+    }
+  }, [enabled])
+  return n
+}
+
+function beep() {
+  try {
+    const ctx = new AudioContext()
+    const o = ctx.createOscillator()
+    const g = ctx.createGain()
+    o.frequency.value = 880
+    g.gain.setValueAtTime(0.08, ctx.currentTime)
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4)
+    o.connect(g).connect(ctx.destination)
+    o.start()
+    o.stop(ctx.currentTime + 0.4)
+  } catch {
+    /* sound not allowed until the page is clicked — badge still shows */
+  }
 }

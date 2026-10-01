@@ -22,6 +22,7 @@ import { Route as SetupRouteImport } from './routes/setup'
 import { Route as TrackRouteImport } from './routes/track'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminFinanceRouteImport } from './routes/admin/finance'
+import { Route as AdminInboxRouteImport } from './routes/admin/inbox'
 import { Route as AdminStaffRouteImport } from './routes/admin/staff'
 import { Route as AdminWebsiteRouteImport } from './routes/admin/website'
 import { Route as MerchantIndexRouteImport } from './routes/merchant/index'
@@ -101,6 +102,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminFinanceRoute = AdminFinanceRouteImport.update({
   id: '/finance',
   path: '/finance',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminInboxRoute = AdminInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminStaffRoute = AdminStaffRouteImport.update({
@@ -192,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/setup': typeof SetupRoute
   '/track': typeof TrackRoute
   '/admin/finance': typeof AdminFinanceRoute
+  '/admin/inbox': typeof AdminInboxRoute
   '/admin/staff': typeof AdminStaffRoute
   '/admin/website': typeof AdminWebsiteRoute
   '/merchant/deliveries': typeof MerchantDeliveriesRoute
@@ -220,6 +227,7 @@ export interface FileRoutesByTo {
   '/setup': typeof SetupRoute
   '/track': typeof TrackRoute
   '/admin/finance': typeof AdminFinanceRoute
+  '/admin/inbox': typeof AdminInboxRoute
   '/admin/staff': typeof AdminStaffRoute
   '/admin/website': typeof AdminWebsiteRoute
   '/merchant/deliveries': typeof MerchantDeliveriesRoute
@@ -251,6 +259,7 @@ export interface FileRoutesById {
   '/setup': typeof SetupRoute
   '/track': typeof TrackRoute
   '/admin/finance': typeof AdminFinanceRoute
+  '/admin/inbox': typeof AdminInboxRoute
   '/admin/staff': typeof AdminStaffRoute
   '/admin/website': typeof AdminWebsiteRoute
   '/merchant/deliveries': typeof MerchantDeliveriesRoute
@@ -283,6 +292,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/track'
     | '/admin/finance'
+    | '/admin/inbox'
     | '/admin/staff'
     | '/admin/website'
     | '/merchant/deliveries'
@@ -311,6 +321,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/track'
     | '/admin/finance'
+    | '/admin/inbox'
     | '/admin/staff'
     | '/admin/website'
     | '/merchant/deliveries'
@@ -341,6 +352,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/track'
     | '/admin/finance'
+    | '/admin/inbox'
     | '/admin/staff'
     | '/admin/website'
     | '/merchant/deliveries'
@@ -471,6 +483,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFinanceRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/inbox': {
+      id: '/admin/inbox'
+      path: '/inbox'
+      fullPath: '/admin/inbox'
+      preLoaderRoute: typeof AdminInboxRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/staff': {
       id: '/admin/staff'
       path: '/staff'
@@ -581,6 +600,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteRouteChildren {
   AdminFinanceRoute: typeof AdminFinanceRoute
+  AdminInboxRoute: typeof AdminInboxRoute
   AdminStaffRoute: typeof AdminStaffRoute
   AdminWebsiteRoute: typeof AdminWebsiteRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -593,6 +613,7 @@ interface AdminRouteRouteChildren {
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminFinanceRoute: AdminFinanceRoute,
+  AdminInboxRoute: AdminInboxRoute,
   AdminStaffRoute: AdminStaffRoute,
   AdminWebsiteRoute: AdminWebsiteRoute,
   AdminIndexRoute: AdminIndexRoute,

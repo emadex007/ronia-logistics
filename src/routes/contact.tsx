@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { SiteLayout } from '~/components/SiteLayout'
 import { useSiteSettings } from '~/components/useSite'
 import { ContactBlock, FaqList, PageHero, TrackBox } from '~/components/Sections'
+import { ContactForm } from '~/components/ContactForm'
 
 export const Route = createFileRoute('/contact')({
   head: () => ({ meta: [{ title: 'Contact us — Ronia Logistics' }] }),
@@ -13,6 +14,9 @@ function ContactPage() {
   return (
     <SiteLayout settings={s}>
       <PageHero title="Contact us" subtitle={s.cta_body || 'Call, WhatsApp or visit our office — we are happy to help.'} image={s.hero_image} />
+      <section className="mx-auto max-w-3xl px-4 pt-16 sm:px-6">
+        <ContactForm title={s.contact_form_title} />
+      </section>
       <ContactBlock s={s} />
       <section className="mx-auto max-w-3xl px-4 sm:px-6">
         <div className="card p-6">

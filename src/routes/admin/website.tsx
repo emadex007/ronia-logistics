@@ -516,6 +516,22 @@ function WebsiteEditor() {
                 ))}
               </div>
             </Section>
+            <Section title="Website chat & contact form" hint="Chats and contact-form messages arrive in Admin → Messages.">
+              <label className="flex items-center gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-[var(--color-accent-500)]"
+                  checked={v('chat_enabled') !== '0'}
+                  onChange={(e) => set('chat_enabled')(e.target.checked ? '1' : '0')}
+                />
+                Show the chat bubble on the website
+              </label>
+              <div className="grid gap-4 md:grid-cols-2">
+                <TextField label="Chat window title" value={v('chat_title')} onChange={set('chat_title')} placeholder="Chat with us" />
+                <TextField label="Contact form heading" value={v('contact_form_title')} onChange={set('contact_form_title')} placeholder="Send us a message" />
+              </div>
+              <TextField label="Chat welcome message" value={v('chat_greeting')} onChange={set('chat_greeting')} multiline rows={2} />
+            </Section>
           </>
         )}
 

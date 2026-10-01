@@ -43,8 +43,13 @@ export const getDashboard = createServerFn({ method: 'GET' }).handler(async () =
     ? ((await first<{ n: number }>("SELECT COUNT(*) AS n FROM merchant_applications WHERE status = 'pending'"))?.n ?? 0)
     : 0
 
+  const unreadMessages = user.perms.includes('inbox')
+    ? ((await first<{ n: number }>('SELECT COUNT(*) AS n FROM conversations WHERE unread_admin > 0'))?.n ?? 0)
+    : 0
+
   return {
     pendingApplications,
+    unreadMessages,
     statusCounts: Object.fromEntries(byStatus.map((r) => [r.status, r.n])) as Record<string, number>,
     todayCount,
     deliveredToday,

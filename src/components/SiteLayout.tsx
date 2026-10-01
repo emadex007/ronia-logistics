@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { Link } from '@tanstack/react-router'
 import { Logo } from './ui'
+import { ChatWidget } from './ChatWidget'
 import { SOCIAL_LABELS, SocialLogo, type SocialKey } from './SocialIcons'
 import { isDark, mediaUrl, SOCIALS } from '~/lib/site'
 import type { Settings } from '~/lib/types'
@@ -193,6 +194,8 @@ export function SiteLayout({ settings, children }: { settings: Settings; childre
             .replace('{company}', settings.company_name || '')}
         </div>
       </footer>
+
+      {settings.chat_enabled !== '0' && <ChatWidget settings={settings} raised={!!wa} />}
 
       {wa && (
         <a
